@@ -64,7 +64,7 @@ class TriggersTests(unittest.TestCase):
         self.save_alerts(symbols)
         self.analyze.return_value = {"ret_1m_pct": -1}
         result = self.check(symbols, limit=30)
-        self.assertTrue(result["ok"])
+        self.assertTrue(result["ok"], result)
         self.assertEqual(result["scope"], "partial")
         self.assertEqual(result["checked_auto"], 30)
         self.assertEqual(result["successful_auto"], 30)

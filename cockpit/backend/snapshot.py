@@ -17,6 +17,7 @@ from datetime import datetime
 
 HERE = Path(__file__).resolve().parent
 import settings
+from storage import replace_with_retry
 
 import data  # noqa: E402
 
@@ -290,7 +291,7 @@ def _write_snapshot(target, out):
     # 原子写:避免前端在写入瞬间读到半截 JSON。
     tmp = target.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(out, ensure_ascii=False), encoding="utf-8")
-    tmp.replace(target)
+    replace_with_retry(lambda: tmp.replace(target))
 
 
 def _read_snapshot():

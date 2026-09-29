@@ -18,6 +18,7 @@ from datetime import datetime
 # 先 load_dotenv 再 import price(price.py 模块级读 EODHD_API_KEY)
 HERE = Path(__file__).resolve().parent
 import settings
+from storage import replace_with_retry
 
 import data  # noqa: E402
 
@@ -84,7 +85,7 @@ def _atomic_write(path, value):
             json.dump(value, stream, ensure_ascii=False, indent=2, allow_nan=False)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        replace_with_retry(lambda: os.replace(temporary, path))
     except (OSError, TypeError, ValueError) as exc:
         raise _StorageError(f"无法保存 {path.name}: {exc}") from exc
     finally:
