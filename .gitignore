@@ -12,7 +12,7 @@ __pycache__/
 score_report.md
 *.skill
 dist/
-reports/
+/reports/
 .playwright-cli/
 tracking/_score_price_cache.json
 tracking/_score_run.log

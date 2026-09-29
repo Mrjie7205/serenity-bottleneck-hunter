@@ -49,7 +49,12 @@ def main():
     except ImportError as exc:
         raise RuntimeError('请在项目环境安装 pip install -r cockpit/requirements.txt') from exc
     if args.check:
-        print(json.dumps({"ok": True, "version": settings.VERSION, **settings.mode_info()}, ensure_ascii=False))
+        import data
+        picks, reports = data.load_picks(), data.load_reports()
+        if settings.DEMO and (not picks or not reports):
+            raise RuntimeError('演示数据或报告不完整，请重新下载完整发布包。')
+        print(json.dumps({"ok": True, "version": settings.VERSION, "records": len(picks),
+                          "reports": len(reports), **settings.mode_info()}, ensure_ascii=False))
         return 0
     print(f'Serenity Cockpit ({settings.mode_info()["dataset_label"]}): http://127.0.0.1:{args.port}')
     uvicorn.run(backend.app, host="127.0.0.1", port=args.port)

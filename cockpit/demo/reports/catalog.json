@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "reports": {
+    "demo-report.html": {
+      "report_date": "2026-06-02",
+      "theme": "工具离线演示",
+      "market": "US",
+      "dogfood": null
+    }
+  }
+}

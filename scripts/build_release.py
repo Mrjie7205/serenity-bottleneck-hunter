@@ -15,7 +15,7 @@ ROOT_FILES = ("SKILL.md", "README.md", "LICENSE", "VERSION", "CHANGELOG.md", ".e
 SOURCE_DIRS = ("agents", "scripts", "reference", "examples", "tests")
 COCKPIT_FILES = ("README.md", "run.py", "requirements.txt", "requirements-test.txt", "requirements-lock.txt",
     "THIRD_PARTY_NOTICES.txt", "web/package.json", "web/package-lock.json", "web/tsconfig.json",
-    "web/vite.config.ts", "web/index.html")
+    "web/vite.config.ts", "web/index.html", "demo/reports/demo-report.html", "demo/reports/catalog.json")
 COCKPIT_DIRS = ("backend", "demo", "tests", "web/src", "web/tests", "web/dist")
 TRACKING_FILES = ("forward_picks.csv", "theme_benchmark.csv", "cross_theme_index_snapshot.csv",
     "scorecard.md", "cross_theme_scan.py", "score_tracker.py", "check_desc_freshness.py",

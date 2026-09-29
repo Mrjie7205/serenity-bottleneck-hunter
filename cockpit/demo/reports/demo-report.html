@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Serenity v0.2 · 可复现历史演示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe5; --surface:#fffdf8; --surface-2:#faf6ec;
+    --ink:#1a1c21; --ink-soft:#3a3d44; --muted:#6c7077; --faint:#9aa0a6;
+    --line:#e0d8c8; --line-strong:#cdc3ad;
+    --burg:#7a2e3a; --burg-soft:#a8505c;
+    --green:#1a7a4c; --green-bg:#e7f3ec;
+    --amber:#b97608; --amber-bg:#f8efdc;
+    --red:#b3261e; --red-bg:#f7e6e3;
+    --gray:#8a8f96; --gray-bg:#ece9e1;
+    --gold:#b8902e;
+    --display:'Fraunces','Noto Serif SC',Georgia,serif;
+    --body:'Hanken Grotesk','Noto Sans SC',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper); color:var(--ink); font-family:var(--body); font-size:16.5px; line-height:1.68; -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 1px 1px, rgba(122,46,58,.045) 1px, transparent 0); background-size:22px 22px;}
+  .wrap{max-width:1080px; margin:0 auto; padding:0 28px}
+  .hero{background:var(--ink); color:#f4efe5; padding:64px 0 52px; position:relative; overflow:hidden; border-bottom:3px solid var(--burg)}
+  .hero::before{content:""; position:absolute; inset:0; background:radial-gradient(ellipse 60% 50% at 85% 0%, rgba(184,144,46,.18), transparent 60%),radial-gradient(ellipse 50% 60% at 10% 100%, rgba(122,46,58,.30), transparent 60%); pointer-events:none}
+  .hero .wrap{position:relative}
+  .kicker{font-family:var(--mono); font-size:12px; letter-spacing:.32em; text-transform:uppercase; color:var(--gold); margin-bottom:20px}
+  .hero h1{font-family:var(--display); font-weight:900; font-size:clamp(38px,6vw,68px); line-height:1.02; letter-spacing:-.015em}
+  .hero h1 em{font-style:italic; color:var(--burg-soft); font-weight:600}
+  .hero .sub{font-size:18px; color:#cfc8b9; margin-top:18px; max-width:680px; line-height:1.6}
+  .meta-row{display:flex; flex-wrap:wrap; gap:10px 26px; margin-top:30px; font-family:var(--mono); font-size:12.5px; color:#b6afa0}
+  .meta-row b{color:#f4efe5; font-weight:500}
+  .verdict{margin:-30px auto 0; position:relative; z-index:5; background:var(--surface); border:1px solid var(--line-strong); border-left:5px solid var(--burg); border-radius:4px; padding:26px 30px; box-shadow:0 22px 50px -28px rgba(26,28,33,.5)}
+  .verdict .tag{font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--burg); font-weight:700}
+  .verdict p{margin-top:10px; font-size:18px; line-height:1.6}
+  .verdict strong{color:var(--burg)}
+  section{padding:52px 0 8px}
+  .eyebrow{font-family:var(--mono); font-size:12px; letter-spacing:.24em; text-transform:uppercase; color:var(--burg); margin-bottom:8px}
+  h2{font-family:var(--display); font-weight:700; font-size:clamp(26px,3.6vw,38px); line-height:1.1; letter-spacing:-.01em; margin-bottom:6px}
+  h2 .num{color:var(--faint); font-family:var(--mono); font-size:.5em; vertical-align:super; margin-right:10px; font-weight:400}
+  .lead{color:var(--ink-soft); font-size:17px; max-width:760px; margin-bottom:26px}
+  h3{font-family:var(--display); font-weight:600; font-size:21px; margin:30px 0 12px}
+  p{margin-bottom:14px} p:last-child{margin-bottom:0}
+  a{color:var(--burg); text-underline-offset:3px}
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:6px; overflow:hidden}
+  .stat{background:var(--surface); padding:24px 22px}
+  .stat .big{font-family:var(--display); font-weight:900; font-size:40px; line-height:1; color:var(--burg); letter-spacing:-.02em}
+  .stat .big span{font-size:20px; color:var(--gold)}
+  .stat .lab{font-size:13.5px; color:var(--muted); margin-top:10px; line-height:1.45}
+  .callout{background:var(--burg); color:#f7efe2; border-radius:6px; padding:28px 30px; margin:26px 0}
+  .callout h3{font-family:var(--display); color:#fff; margin:0 0 10px; font-size:22px}
+  .callout p{color:#e9dfd0; margin-bottom:10px}
+  .callout strong{color:var(--gold)}
+  .callout .pill{display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; background:rgba(255,255,255,.12); padding:4px 11px; border-radius:99px; margin-bottom:14px}
+  .chain{display:flex; flex-direction:column; gap:8px; margin:8px 0}
+  .layer{background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:16px 20px; display:flex; align-items:center; gap:18px; position:relative}
+  .layer.up{border-left:4px solid var(--green)} .layer.mid{border-left:4px solid var(--amber)} .layer.down{border-left:4px solid var(--gray); opacity:.78}
+  .layer .lv{font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); min-width:118px; font-weight:600}
+  .layer .nm{font-weight:700; font-size:15.5px} .layer .ds{color:var(--muted); font-size:14px} .layer.up .nm{color:var(--green)}
+  .chain .arrow{text-align:center; color:var(--faint); font-family:var(--mono); font-size:13px; line-height:1}
+  .board{border:1px solid var(--line-strong); border-radius:8px; overflow:hidden; margin:8px 0; background:var(--surface)}
+  .row{display:grid; grid-template-columns:128px 1fr 168px 116px; gap:18px; align-items:center; padding:16px 20px; border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row.head{background:var(--ink); color:#e9e2d4; font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; padding:13px 20px}
+  .row.head span{color:#bdb5a4}
+  .tk{font-family:var(--mono); font-weight:700; font-size:18px}
+  .tk .px{display:block; font-size:12.5px; color:var(--muted); font-weight:400; margin-top:2px}
+  .nmcell .t{font-weight:700; font-size:15.5px; line-height:1.25} .nmcell .d{color:var(--muted); font-size:13.5px; margin-top:3px}
+  .badge{display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; padding:3px 8px; border-radius:5px; margin-top:7px; text-transform:uppercase}
+  .b-green{background:var(--green-bg); color:var(--green)} .b-amber{background:var(--amber-bg); color:var(--amber)} .b-red{background:var(--red-bg); color:var(--red)} .b-gray{background:var(--gray-bg); color:var(--gray)}
+  /* ⭐ 跨主题节点徽章 — 见 tracking/cross_theme_scan.py */
+  .star{display:inline-block; font-size:13px; margin-left:6px; vertical-align:middle; color:var(--gold); cursor:help; letter-spacing:-1px}
+  .star[title]{border-bottom:1px dotted var(--gold)}
+  .cross-theme-section{background:var(--surface-2); border:1px solid var(--line-strong); border-left:5px solid var(--gold); border-radius:6px; padding:24px 28px; margin:30px 0}
+  .cross-theme-section h3{font-family:var(--display); font-weight:700; color:var(--burg); margin:0 0 14px; font-size:22px}
+  .cross-theme-section .lead{margin-bottom:18px; color:var(--ink-soft); font-size:15px}
+  .cross-row{display:grid; grid-template-columns:auto 1fr auto; gap:14px; align-items:center; padding:12px 0; border-bottom:1px dashed var(--line); font-size:14.5px}
+  .cross-row:last-child{border-bottom:0}
+  .cross-row .sym{font-family:var(--mono); font-weight:700; color:var(--burg); font-size:15px}
+  .cross-row .themes{color:var(--ink-soft)}
+  .cross-row .themes em{font-style:normal; color:var(--burg); font-weight:600}
+  .cross-row .stars-cell{font-size:18px; color:var(--gold); letter-spacing:-2px}
+  /* === 术语 abbr tooltip(2026-06-01 加,Level 1 可读性升级)=== */
+  abbr[title]{border-bottom:1px dotted var(--burg); cursor:help; text-decoration:none; font-style:normal}
+  abbr[title]:hover{border-bottom-color:var(--gold); background:rgba(184,144,46,.06)}
+  /* === 30 秒看懂主题(Level 2)=== */
+  .thirty-sec{background:linear-gradient(135deg, #fbf6e8 0%, var(--surface-2) 100%); border:1px solid var(--gold); border-radius:8px; padding:24px 28px; margin:24px 0; position:relative}
+  .thirty-sec::before{content:"⏱"; position:absolute; top:-14px; left:24px; background:var(--gold); color:#fff; padding:5px 12px; border-radius:99px; font-size:14px; font-weight:700}
+  .thirty-sec .label{font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:8px; margin-top:6px}
+  .thirty-sec h3{font-family:var(--display); color:var(--burg); margin:0 0 10px; font-size:22px}
+  .thirty-sec p{font-size:15.5px; color:var(--ink-soft); line-height:1.7; margin-bottom:0}
+  /* === 候选行 "为什么重要" 人话解释(Level 2)=== */
+  .nmcell .why{font-size:13px; color:var(--ink-soft); margin-top:6px; padding:6px 10px; background:rgba(122,46,58,.04); border-left:2px solid var(--burg-soft); border-radius:0 4px 4px 0; line-height:1.5; font-style:italic}
+  .nmcell .why::before{content:"💡 "; font-style:normal; margin-right:2px}
+  /* === 报告底部 Glossary 速查表(Level 1)=== */
+  .glossary-section{background:var(--surface-2); border:1px solid var(--line); padding:18px 24px; margin:36px 0 8px; border-radius:8px}
+  .glossary-section summary{font-family:var(--display); font-weight:700; color:var(--burg); font-size:18px; cursor:pointer; list-style:none; padding:6px 0; user-select:none}
+  .glossary-section summary::-webkit-details-marker{display:none}
+  .glossary-section summary::before{content:"▸ "; display:inline-block; transition:transform .15s; margin-right:6px; font-family:var(--mono)}
+  .glossary-section[open] summary::before{transform:rotate(90deg)}
+  .glossary-section[open] summary{margin-bottom:18px; padding-bottom:14px; border-bottom:1px dashed var(--line)}
+  .glossary-section .gloss-note{font-size:13px; color:var(--muted); margin-top:6px; margin-bottom:14px; font-family:var(--mono)}
+  .glossary-list{display:grid; grid-template-columns:1fr; gap:0; max-height:480px; overflow-y:auto; padding-right:8px}
+  .glossary-row{display:grid; grid-template-columns:140px 1fr; gap:14px; padding:8px 0; border-bottom:1px dashed var(--line); font-size:13.5px; line-height:1.45}
+  .glossary-row:last-child{border-bottom:0}
+  .glossary-row .term{font-family:var(--mono); color:var(--burg); font-weight:700; word-break:break-all}
+  .glossary-row .def{color:var(--ink-soft)}
+  @media(max-width:760px){.glossary-row{grid-template-columns:1fr; gap:2px}}
+  /* === Step 2 · 产业链网状视图(.chain-viz) === */
+  .chain-viz{position:relative; padding:30px 0 26px; margin:14px 0 18px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px}
+  .chain-viz .chain-edges{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; overflow:visible}
+  .chain-layer{display:grid; grid-template-columns:180px 1fr; align-items:center; gap:18px; padding:14px 28px; position:relative; z-index:2}
+  .chain-layer + .chain-layer{margin-top:42px}
+  .chain-layer-down{opacity:.58}
+  .layer-label{font-family:var(--mono); font-size:11.5px; letter-spacing:.1em; color:var(--burg); font-weight:700; text-transform:uppercase; border-right:2px solid var(--line-strong); padding-right:16px; line-height:1.4}
+  .layer-label small{display:block; font-family:var(--body); font-weight:400; color:var(--muted); font-size:10.5px; margin-top:3px; letter-spacing:.02em; text-transform:none}
+  .layer-nodes{display:flex; flex-wrap:wrap; gap:14px}
+  .cnode{background:var(--surface); border:1px solid var(--line-strong); border-radius:7px; padding:9px 14px; min-width:96px; position:relative; font-family:var(--mono); z-index:3; transition:transform .15s, box-shadow .15s; cursor:help}
+  .cnode b{font-size:14px; font-weight:700; color:var(--ink); display:block; letter-spacing:.01em}
+  .cnode small{display:block; font-family:var(--body); font-weight:400; font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.32; max-width:200px}
+  .cnode.s-early{border-left:3px solid var(--green)}
+  .cnode.s-ext{border-left:3px solid var(--red)}
+  .cnode.s-range{border-left:3px solid var(--amber)}
+  .cnode.s-seed{border-left:3px solid var(--gray); opacity:.78}
+  .cnode.is-bottleneck{box-shadow:0 0 0 2px var(--gold), 0 8px 18px -10px rgba(184,144,46,.5); background:linear-gradient(180deg, var(--surface) 0%, #fcf6e8 100%)}
+  /* 枢纽瓶颈(2026-06-13 加,KRMN 教训):入度≥2 且 出度≥2 的多对多枢纽——
+     上游多家供它、下游多线靠它,采购方最难绕开,但旧"漏斗"规则(出度≤1)抓不住 */
+  .cnode.is-hub{box-shadow:0 0 0 2px var(--burg), 0 8px 18px -10px rgba(122,46,58,.5); background:linear-gradient(180deg, var(--surface) 0%, #f9eef0 100%)}
+  .cnode .star-inline{position:absolute; top:-9px; right:-7px; font-size:13px; color:var(--gold); filter:drop-shadow(0 1px 2px rgba(0,0,0,.25)); letter-spacing:-2px}
+  .cnode:hover{transform:translateY(-1px); box-shadow:0 4px 10px -4px rgba(0,0,0,.15); z-index:10}
+  .cnode.is-bottleneck:hover{box-shadow:0 0 0 2px var(--gold), 0 8px 18px -8px rgba(184,144,46,.6)}
+  /* Custom hover tooltip — business 业务(static)+ status 当前快照(dynamic,带日期)2026-06-02 用户拆分重构 */
+  .cnode[data-desc]{position:relative}
+  .cnode[data-desc] .tip-box{
+    position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%) translateY(4px);
+    background:var(--ink); color:#f4efe5; padding:0; border-radius:6px;
+    min-width:280px; max-width:360px;
+    box-shadow:0 10px 30px -8px rgba(0,0,0,.5); border:1px solid var(--gold);
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:1000;
+    font-family:var(--body); font-weight:400; font-size:13px; line-height:1.5; text-align:left;
+  }
+  .cnode[data-desc]::before{
+    content:""; position:absolute; bottom:calc(100% + 4px); left:50%; transform:translateX(-50%);
+    border:6px solid transparent; border-top-color:var(--gold); opacity:0; transition:opacity .2s; z-index:1000;
+  }
+  .cnode[data-desc]:hover .tip-box{opacity:1; transform:translateX(-50%) translateY(0)}
+  .cnode[data-desc]:hover::before{opacity:1}
+  .tip-box .tip-biz{padding:11px 14px 8px; border-bottom:1px dashed rgba(184,144,46,.3)}
+  .tip-box .tip-biz::before{content:"业务 · "; color:var(--gold); font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase}
+  .tip-box .tip-stat{padding:8px 14px 11px; background:rgba(122,46,58,.18)}
+  .tip-box .tip-stat::before{content:"当前 · "; color:var(--burg-soft); font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase}
+  .tip-box .tip-date{font-family:var(--mono); font-size:10.5px; color:var(--gold); margin-left:6px}
+  .chain-legend{display:flex; flex-wrap:wrap; gap:18px 24px; padding:14px 28px 4px; font-size:12px; color:var(--muted); font-family:var(--mono); border-top:1px dashed var(--line)}
+  .chain-legend .item{display:flex; align-items:center; gap:7px}
+  .chain-legend .swatch{width:24px; height:3px; border-radius:2px}
+  .chain-legend .sw-thick{background:var(--burg); height:5px}
+  .chain-legend .sw-mid{background:var(--amber); height:3.5px}
+  .chain-legend .sw-thin{background:var(--gray); height:2px}
+  .chain-legend .sw-bn{width:14px; height:14px; border-radius:3px; box-shadow:0 0 0 2px var(--gold); background:var(--surface)}
+  .chain-legend .sw-star{font-size:14px; color:var(--gold); width:auto}
+  /* === 动量单元(2026-06-13 重设计:水位标尺+人话,代替旧填充条)===
+     旧版填充条语义歧义(满=贴顶=危险,但视觉直觉"满=好");新版:
+     · 标尺两端 = 6月低/6月高(2026-06-17 加:标注真实价格 $低/$高),游标点 = 现价位置(.dot left:NN%)+ 游标上方 .cur 牌标现价($现价,left 钳到 10~90% 防出界)
+     · .word 人话水位:贴顶(rng≥90)/高位(70-89)/中位(30-69)/低位(10-29)/贴底(<10)
+     · 数字降级为附注:距高点 off% · 近1月/近3月 */
+  .mo{font-family:var(--mono)}
+  .mo .ends{display:flex; justify-content:space-between; font-size:10px; color:var(--faint); margin-bottom:1px}
+  .mo .ends b{color:var(--muted); font-weight:700; font-family:var(--mono)}  /* 6月低/高 实际价格 */
+  .mo .gauge{position:relative; height:13px; margin:18px 0 5px}  /* 上留白给现价游标牌 */
+  .mo .gauge .track{position:absolute; left:0; right:0; top:5px; height:3px; background:var(--line-strong); border-radius:2px}
+  .mo .gauge .dot{position:absolute; top:0; width:13px; height:13px; border-radius:50%; transform:translateX(-50%); border:2.5px solid var(--surface); box-shadow:0 0 0 1px var(--line-strong),0 1px 3px rgba(0,0,0,.25)}
+  .mo .gauge .cur{position:absolute; top:-15px; transform:translateX(-50%); font-size:10px; font-weight:700; color:var(--ink); background:var(--surface); border:1px solid var(--line-strong); border-radius:3px; padding:0 4px; white-space:nowrap; font-family:var(--mono)}  /* 游标上方:现价牌 */
+  .mo.s-early .dot{background:var(--green)} .mo.s-ext .dot{background:var(--red)} .mo.s-range .dot{background:var(--amber)}
+  .mo .word{font-size:12.5px; font-weight:700}
+  .mo.s-early .word{color:var(--green)} .mo.s-ext .word{color:var(--red)} .mo.s-range .word{color:var(--amber)}
+  .mo .lbl{font-size:11px; color:var(--muted); line-height:1.5} .mo .lbl b{color:var(--ink)}
+  .stage-t{font-family:var(--mono); font-size:11.5px; font-weight:700; text-align:right}
+  .stage-t.early{color:var(--green)} .stage-t.ext{color:var(--red)} .stage-t.range{color:var(--amber)}
+  .stage-t small{display:block; color:var(--muted); font-weight:400; font-size:10.5px; margin-top:3px}
+  /* === 头条位(2026-06-13 加):1-2 个"本次行动点"无视 stage 排序置顶 === */
+  .top-picks{margin:0 0 24px}
+  .tp-label{font-family:var(--mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--burg); font-weight:700; margin-bottom:10px}
+  .tp-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px}
+  .tp-card{background:var(--surface); border:1px solid var(--gold); border-left:5px solid var(--gold); border-radius:8px; padding:18px 20px; box-shadow:0 14px 30px -22px rgba(184,144,46,.55)}
+  .tp-card .tp-k{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; color:var(--gold); font-weight:700; text-transform:uppercase}
+  .tp-card .tp-t{font-family:var(--display); font-weight:700; font-size:19px; margin:6px 0 4px}
+  .tp-card .tp-d{font-size:13.5px; color:var(--ink-soft); line-height:1.55}
+  .tp-card .tp-act{font-family:var(--mono); font-size:12px; font-weight:700; margin-top:10px; color:var(--burg)}
+  /* === 行内三道闸门小标(标的级打分,2026-06-13 加)=== */
+  .gates-mini{display:flex; gap:6px; margin-top:7px; font-size:10.5px; font-family:var(--mono); flex-wrap:wrap}
+  .gates-mini span{padding:2px 7px; border-radius:4px}
+  .gates-mini .ok{color:var(--green); background:var(--green-bg)}
+  .gates-mini .mid{color:var(--amber); background:var(--amber-bg)}
+  .gates-mini .no{color:var(--gray); background:var(--gray-bg)}
+  /* === trigger 分层标注:⚙=可自动核对的价格条件 / 👁=需人工判断(2026-06-13 加)=== */
+  .trig{display:inline-block; font-family:var(--mono); font-size:11px; margin-left:6px; margin-top:7px; padding:3px 8px; border-radius:5px; background:var(--surface-2); border:1px dashed var(--line-strong); color:var(--amber)}
+  .trig.auto::before{content:"⚙ "; color:var(--muted)}
+  .trig.manual::before{content:"👁 "; color:var(--muted)}
+  /* === 判定史(同标的历史判定自动带出,2026-06-13 加)=== */
+  .hist{font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:8px; padding-top:7px; border-top:1px dashed var(--line)}
+  .hist b{color:var(--ink)}
+  .hist .v-ok{color:var(--green); font-weight:700}
+  .hist .v-bad{color:var(--red); font-weight:700}
+  /* === 折叠详情(密度纪律:行内只留决策三要素,其余收进 details)=== */
+  details.more{margin-top:8px; font-size:13px; color:var(--ink-soft)}
+  details.more summary{cursor:pointer; font-family:var(--mono); font-size:11.5px; color:var(--burg); user-select:none; list-style:none}
+  details.more summary::-webkit-details-marker{display:none}
+  details.more summary::before{content:"▸ "}
+  details.more[open] summary::before{content:"▾ "}
+  details.more p{margin:8px 0 0; line-height:1.55}
+  /* === Cockpit 实时联动链接(本地面板在跑时可点)=== */
+  .tk a.ck{font-size:12px; text-decoration:none; margin-left:5px; opacity:.55}
+  .tk a.ck:hover{opacity:1}
+  .gates{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:8px 0}
+  .gate{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:22px 20px; border-top:4px solid}
+  .gate.g-ok{border-top-color:var(--green)} .gate.g-mid{border-top-color:var(--amber)} .gate.g-no{border-top-color:var(--red)}
+  .gate .ic{font-size:26px} .gate .h{font-family:var(--display); font-weight:600; font-size:19px; margin:8px 0 4px}
+  .gate .score{font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:10px}
+  .gate.g-ok .score{color:var(--green)} .gate.g-mid .score{color:var(--amber)} .gate.g-no .score{color:var(--red)}
+  .gate p{font-size:13.5px; color:var(--ink-soft); margin:0}
+  .takeaways{counter-reset:tk; margin:8px 0}
+  .ta{display:flex; gap:18px; padding:18px 0; border-bottom:1px solid var(--line)} .ta:last-child{border-bottom:0}
+  .ta::before{counter-increment:tk; content:counter(tk,decimal-leading-zero); font-family:var(--mono); font-weight:700; color:var(--burg); font-size:14px; min-width:34px; padding-top:2px}
+  .ta .x{font-size:15.5px} .ta .x b{color:var(--ink)} .ta .x span{color:var(--muted)}
+  .note{background:var(--surface-2); border:1px dashed var(--line-strong); border-radius:8px; padding:20px 24px; margin:8px 0; font-size:14.5px; color:var(--ink-soft)}
+  .note b{color:var(--ink)} .note code{font-family:var(--mono); font-size:13px; background:var(--surface); padding:2px 6px; border-radius:4px; border:1px solid var(--line)}
+  footer{margin-top:56px; background:var(--ink); color:#b6afa0; padding:40px 0} footer .wrap{font-size:13.5px; line-height:1.7}
+  footer .disc{border-left:3px solid var(--burg); padding-left:18px; color:#cfc8b9} footer a{color:var(--gold)}
+  .srcs{display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:16px; font-family:var(--mono); font-size:12px}
+  @media(max-width:760px){.row{grid-template-columns:1fr 1fr; gap:10px} .row.head{display:none} .row .mo,.row .stage-t{grid-column:1/-1} .gates{grid-template-columns:1fr} .layer{flex-wrap:wrap; gap:8px} .layer .lv{min-width:auto}}
+  @media(max-width:520px){
+    .wrap{padding-left:20px;padding-right:20px}
+    .row{grid-template-columns:minmax(0,1fr);align-items:start}
+    .row .mo,.row .stage-t{grid-column:1}.row>*{min-width:0}
+    .stage-t{text-align:left}.nmcell{overflow-wrap:anywhere}
+    .chain-layer{grid-template-columns:minmax(0,1fr);gap:10px;padding:14px 20px}
+    .chain-layer+.chain-layer{margin-top:24px}
+    .layer-nodes{flex-direction:column;align-items:stretch}
+    .cnode[data-desc] .tip-box{min-width:0;max-width:100%;width:100%}
+  }
+  .rv{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease} .rv.in{opacity:1; transform:none}
+</style>
+<link rel="icon" href="data:,">
+<script type="application/json" id="serenity-report-meta">{"schema_version": 1, "report_date": "2026-06-02", "theme": "工具离线演示", "price_asof": "2026-06-01", "demo": true}</script>
+</head>
+<body>
+<header class="hero"><div class="wrap"><h1>Serenity v0.2 · 可复现历史演示</h1><p class="note"><b>历史演示 · 仅用于验证工具和报告结构，不代表当前行情或投资判断。</b></p>
+<p class="sub">公开归档样本 · 行情截至 2026-06-01 · 仅演示生成与校验流程</p></div></header>
+<section><div class="wrap rv"><div class="tag">◆ 一句话结论</div><p><b>本文件是一份工具演示，不是一份当前投资结论。</b>使用公库原已公开的两条历史快照，展示数据如何进入报告、如何核对数字和如何保留日期。未重新取价，也未复核历史行情。</p></div></section>
+<section><div class="wrap rv"><div class="tag">Step 1 · 资本开支确定性</div><div class="callout"><b>样本</b> 2 家公司 &nbsp;·&nbsp; <b>行情日期</b> 2026-06-01 &nbsp;·&nbsp; <b>网络请求</b> 0 次</div><p class="note">真实研究需要另行验证资本开支、付款方和兑现周期。本演示不声称完成主题研究或资本开支证明。</p></div></section>
+<section><div class="wrap rv"><div class="tag">30 秒看懂</div><p>先读 <abbr title="供应链中难替代且限制扩张的环节">瓶颈</abbr>，再核对公司、数据和证伪条件。此处只展示工作流，不能从演示标识推导买入或卖出。</p></div></section>
+<section><div class="wrap rv"><div class="tag">Step 2 · 产业链网状图(瓶颈双规则自动判定)</div><p>以下依赖边仅用于展示交互组件，不声称实际供应商、客户或商业合作关系。报告需另外为真实关系提供证据。</p><div class="chain-viz"><svg class="chain-edges" xmlns="http://www.w3.org/2000/svg"></svg><div class="chain-layer" data-layer="demand"><div class="layer-label">需求场景<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="DEMAND" data-desc="示例场景" data-status=""><b>需求</b><small>示例场景</small></div></div></div><div class="chain-layer" data-layer="system"><div class="layer-label">系统层<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="SYSTEM" data-desc="示例系统" data-status=""><b>系统</b><small>示例系统</small></div></div></div><div class="chain-layer" data-layer="component"><div class="layer-label">工具层<small>公开历史样本</small></div><div class="layer-nodes"><div class="cnode s-ext" data-id="DDOG.US" data-desc="Datadog——历史数据演示" data-status="水位99 · 近1月+98% · 近3月+148% [2026-06-01]"><b>Datadog</b><small>历史数据演示</small></div><div class="cnode s-ext" data-id="NET.US" data-desc="Cloudflare——历史数据演示" data-status="水位100 · 近1月+24% · 近3月+51% [2026-06-01]"><b>Cloudflare</b><small>历史数据演示</small></div></div></div><div class="chain-layer" data-layer="equipment"><div class="layer-label">设备层<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="EQUIPMENT" data-desc="示例设备" data-status=""><b>设备</b><small>示例设备</small></div></div></div><div class="chain-layer" data-layer="material"><div class="layer-label">材料层<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="MATERIAL" data-desc="示例材料" data-status=""><b>材料</b><small>示例材料</small></div></div></div><div class="edge-list" hidden><span data-from="DEMAND" data-to="SYSTEM" data-weight="1"></span><span data-from="SYSTEM" data-to="DDOG.US" data-weight="1"></span><span data-from="SYSTEM" data-to="NET.US" data-weight="1"></span><span data-from="DDOG.US" data-to="EQUIPMENT" data-weight="1"></span><span data-from="NET.US" data-to="EQUIPMENT" data-weight="1"></span><span data-from="EQUIPMENT" data-to="MATERIAL" data-weight="1"></span></div></div><p class="note">点击节点查看历史快照；连线与漏斗标记展示组件能力，不代表已确认的产业链关系。</p></div></section>
+<section><div class="wrap rv"><div class="top-picks"><div class="tp-label">⚑ 本次行动点</div><div class="tp-grid"><div class="tp-card"><div class="tp-k">01</div><div class="tp-t">检查输入</div><div class="tp-d">查看历史日期与来源说明。</div><div class="tp-act">这是数据验收步骤</div></div><div class="tp-card"><div class="tp-k">02</div><div class="tp-t">核对输出</div><div class="tp-d">运行严格校验，检查报告与 scan 一致。</div><div class="tp-act">这不是交易指令</div></div></div></div></div></section>
+<section><div class="wrap rv"><div class="tag">Step 4–6 · 候选 leaderboard</div><p>下面两行使用历史公开快照；黄色标识仅展示报告样式，不作当前评级。</p><div class="board"><div class="row head"><span>代码 / 现价</span><span>是什么 · 判定</span><span>6月水位 · 动量</span><span style="text-align:right">stage</span></div><div class="row"><div class="tk" data-ticker="DDOG.US">DDOG<span class="px">$277.49</span></div><div class="nmcell"><div class="t">Datadog · 历史演示</div><div class="d">仅供工具验收；公司身份来自公库历史真值表。</div><span class="badge b-amber">🟡 历史样本</span><div class="gates-mini"><span class="mid">🔒 真瓶颈 未评估</span><span class="no">👁 前机构 未评估</span><span class="mid">💰 便宜 未评估</span></div><details class="more"><summary>详情:原型 / 论点</summary><p><b>原型</b> ④ · <b>论点</b> 本例只验证输入输出的一致性，不形成投资论点。</p></details><details style="margin-top:8px"><summary style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;color:#b3261e">§A 反向研究/红队 <span style="background:#7a2e3a;color:#fff;padding:1px 5px;border-radius:3px">Tier-1</span></summary><div style="background:#f7e6e3;border:1px solid #e0a89f;border-radius:6px;padding:9px 11px;margin:6px 0 0;font-size:12px;line-height:1.5;color:#5a2420">数据可能过期，历史快照不等于当前价格；实际研究须独立核对公司、行业与估值。<br><b style="color:#b3261e">最大杀点:把历史数据误当当前数据，会使任何结论失去依据。</b></div></details></div><div class="mo s-ext"><div class="ends"><span>6月低 <b>$98.01</b></span><span><b>$278.70</b> 6月高</span></div><div class="gauge"><div class="track"></div><div class="dot" style="left:99%"></div><span class="cur" style="left:90%">$277.49</span></div><div class="lbl"><span class="word">贴顶</span> · 距高点 <b>-0.4%</b><br>近1月 <b>+97.5%</b> · 近3月 <b>+148.3%</b><br><span style="font-size:10px;color:var(--faint)">第二轴 · fwdP/E — · PEG — · 增速— → <b style="color:var(--muted)">高位待判</b></span></div></div><div class="stage-t ext">EXTENDED<small>已抛物线</small></div></div>
+<div class="row"><div class="tk" data-ticker="NET.US">NET<span class="px">$270.82</span></div><div class="nmcell"><div class="t">Cloudflare · 历史演示</div><div class="d">仅供工具验收；公司身份来自公库历史真值表。</div><span class="badge b-amber">🟡 历史样本</span><div class="gates-mini"><span class="mid">🔒 真瓶颈 未评估</span><span class="no">👁 前机构 未评估</span><span class="mid">💰 便宜 未评估</span></div><details class="more"><summary>详情:原型 / 论点</summary><p><b>原型</b> ④ · <b>论点</b> 本例只验证输入输出的一致性，不形成投资论点。</p></details><details style="margin-top:8px"><summary style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;color:#b3261e">§A 反向研究/红队 <span style="background:#7a2e3a;color:#fff;padding:1px 5px;border-radius:3px">Tier-1</span></summary><div style="background:#f7e6e3;border:1px solid #e0a89f;border-radius:6px;padding:9px 11px;margin:6px 0 0;font-size:12px;line-height:1.5;color:#5a2420">数据可能过期，历史快照不等于当前价格；实际研究须独立核对公司、行业与估值。<br><b style="color:#b3261e">最大杀点:把历史数据误当当前数据，会使任何结论失去依据。</b></div></details></div><div class="mo s-ext"><div class="ends"><span>6月低 <b>$158.83</b></span><span><b>$271.09</b> 6月高</span></div><div class="gauge"><div class="track"></div><div class="dot" style="left:100%"></div><span class="cur" style="left:90%">$270.82</span></div><div class="lbl"><span class="word">贴顶</span> · 距高点 <b>-0.1%</b><br>近1月 <b>+24.5%</b> · 近3月 <b>+51.4%</b><br><span style="font-size:10px;color:var(--faint)">第二轴 · fwdP/E — · PEG — · 增速— → <b style="color:var(--muted)">高位待判</b></span></div></div><div class="stage-t ext">EXTENDED<small>已抛物线</small></div></div></div></div></section>
+<section><div class="wrap rv"><div class="tag">Step 5 · 三道闸门</div><p>真瓶颈、前机构、便宜去风险三道闸门均需要真实研究证据；本示例只演示区块，不宣称已过研究闸门。</p></div></section>
+<section><div class="wrap rv"><div class="tag">⭐ 跨主题信号</div><p>跨主题星级应由自己的跟踪记录重新计算。本示例没有独立跨主题研究结论。</p></div></section>
+<section><div class="wrap rv"><div class="tag">Step 7 · 落地结论</div><p>落地结论：完成离线工具验收后，再开始真实主题研究。无仓位建议、无当前目标价。</p></div></section>
+<footer><div class="wrap"><p class="note">数据备注：demo_scan.json 摘自公库 tracking/_scan_AIAgent_v1.json；原 provider 为 eodhd，日期 2026-06-01。</p><p class="note">本例未调用 price.py 获取实时行情；不把历史原始口径示例用于证明新版复权正确。</p><p class="note">输入与输出均保留在独立演示文件中；正式 tracking/forward_picks.csv 不会被改写。</p><details class="glossary-section"><summary>术语速查</summary><div class="glossary-list"></div></details><p class="note disc">仅研究教育与软件演示，非投资建议。历史数据与演示关系均不可用于交易判断。</p></div></footer>
+<script>
+  /* 滚入动画 */
+  const obs=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}})},{threshold:.12});
+  document.querySelectorAll('.rv').forEach(el=>obs.observe(el));
+
+  /* === Glossary 速查表:从所有 <abbr title> 抽取并按字母排序 === */
+  (function(){
+    function buildGloss(){
+      var container = document.querySelector('.glossary-section .glossary-list');
+      if (!container) return;
+      container.innerHTML = '';
+      var seen = {};
+      document.querySelectorAll('abbr[title]').forEach(function(a){
+        var k = (a.textContent || '').trim();
+        var v = a.getAttribute('title') || '';
+        if (k && v && !seen[k]) seen[k] = v;
+      });
+      var keys = Object.keys(seen).sort(function(a, b){
+        return a.toLowerCase().localeCompare(b.toLowerCase());
+      });
+      if (keys.length === 0){
+        container.innerHTML = '<div class="gloss-note" style="text-align:center; padding:14px">本报告未使用 abbr 注释,无术语条目。</div>';
+        return;
+      }
+      keys.forEach(function(k){
+        var row = document.createElement('div');
+        row.className = 'glossary-row';
+        var t = document.createElement('span'); t.className = 'term'; t.textContent = k;
+        var d = document.createElement('span'); d.className = 'def'; d.textContent = seen[k];
+        row.appendChild(t); row.appendChild(d);
+        container.appendChild(row);
+      });
+      var note = document.querySelector('.glossary-section .gloss-note');
+      if (note){ note.textContent = '共 ' + keys.length + ' 个术语 · 来源 reference/glossary.md · JS 自动从本页 <abbr> 抽取'; }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildGloss);
+    else buildGloss();
+  })();
+
+  /* === Step 2 网状产业链:SVG 边自动布局 + 瓶颈点自动判定 === */
+  (function(){
+    function layoutChain(){
+      document.querySelectorAll('.chain-viz').forEach(function(viz){
+        var svg = viz.querySelector('.chain-edges');
+        if(!svg) return;
+        var vizRect = viz.getBoundingClientRect();
+        svg.setAttribute('width', vizRect.width);
+        svg.setAttribute('height', vizRect.height);
+        svg.setAttribute('viewBox', '0 0 ' + vizRect.width + ' ' + vizRect.height);
+        svg.innerHTML = '';
+
+        /* 统计入度/出度 */
+        var edges = Array.prototype.slice.call(viz.querySelectorAll('.edge-list [data-from]'));
+        var indeg = {}, outdeg = {};
+        edges.forEach(function(e){
+          var f = e.dataset.from, t = e.dataset.to;
+          if(!f || !t) return;
+          outdeg[f] = (outdeg[f] || 0) + 1;
+          indeg[t]  = (indeg[t]  || 0) + 1;
+        });
+
+        /* 瓶颈点自动判定(入度≥2 且 出度≤1)+ tooltip 标 in/out */
+        viz.querySelectorAll('.cnode').forEach(function(n){
+          var id = n.dataset.id; if(!id) return;
+          n.classList.remove('is-bottleneck');
+          var inD = indeg[id] || 0, outD = outdeg[id] || 0;
+          /* 瓶颈判定(2026-06-13 升级为双规则,KRMN 教训):
+             漏斗型 = 入度≥2 且 出度≤1(多家依赖、供少数客户)
+             枢纽型 = 入度≥2 且 出度≥2(多对多,采购方最难绕开,旧规则会漏)
+             均排除下游层(终端不是猎物) */
+          var inDown = n.closest('.chain-layer-down') !== null;
+          n.classList.remove('is-hub');
+          if(inD >= 2 && outD <= 1 && !inDown) n.classList.add('is-bottleneck');
+          else if(inD >= 2 && outD >= 2 && !inDown) n.classList.add('is-hub');
+          var tip = '入度:' + inD + ' · 出度:' + outD;
+          if(n.classList.contains('is-bottleneck')) tip += ' · 🔒 漏斗瓶颈(多家依赖它)';
+          else if(n.classList.contains('is-hub')) tip += ' · 🔗 枢纽瓶颈(多对多,最难绕开)';
+          else if(inDown && inD >= 2) tip += ' · 链路终端(下游层,跳过)';
+          if(n.querySelector('.star-inline')) tip += ' · ⭐ 跨主题节点';
+          n.title = tip;
+          /* Custom tooltip box(2026-06-02 用户拆分:business + status 两段)*/
+          var desc = n.dataset.desc;
+          if (desc && !n.querySelector('.tip-box')){
+            var status = n.dataset.status || '';
+            var box = document.createElement('div'); box.className = 'tip-box';
+            var biz = document.createElement('div'); biz.className = 'tip-biz'; biz.textContent = desc;
+            box.appendChild(biz);
+            if (status){
+              var stat = document.createElement('div'); stat.className = 'tip-stat';
+              var m = status.match(/^(.*?)\s*\[(\d{4}-\d{2}-\d{2})\]\s*$/);
+              if (m){
+                stat.textContent = m[1].trim() + ' ';
+                var dt = document.createElement('span'); dt.className = 'tip-date'; dt.textContent = '['+m[2]+']';
+                stat.appendChild(dt);
+              } else stat.textContent = status;
+              box.appendChild(stat);
+            }
+            n.appendChild(box);
+          }
+        });
+
+        /* 画边(三档粗细+颜色,bezier 曲线,无箭头标记保持简洁) */
+        edges.forEach(function(e){
+          var fromNode = viz.querySelector('.cnode[data-id="' + e.dataset.from + '"]');
+          var toNode   = viz.querySelector('.cnode[data-id="' + e.dataset.to   + '"]');
+          if(!fromNode || !toNode) return;
+          var fr = fromNode.getBoundingClientRect();
+          var tr = toNode.getBoundingClientRect();
+          /* 上游层在顶部 → 物流方向 from.bottom 到 to.top */
+          var x1 = fr.left + fr.width/2  - vizRect.left;
+          var y1 = fr.bottom              - vizRect.top;
+          var x2 = tr.left + tr.width/2  - vizRect.left;
+          var y2 = tr.top                 - vizRect.top;
+          var cy1 = y1 + (y2 - y1) * 0.55;
+          var cy2 = y2 - (y2 - y1) * 0.55;
+          var w = parseFloat(e.dataset.weight) || 0.3;
+          var stroke, sw;
+          if(w >= 0.5){      stroke = '#7a2e3a'; sw = Math.max(3.0, w * 6); }
+          else if(w >= 0.25){ stroke = '#b97608'; sw = 2.2; }
+          else {              stroke = '#9aa0a6'; sw = 1.4; }
+          var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          p.setAttribute('d', 'M' + x1 + ',' + y1 + ' C' + x1 + ',' + cy1 + ' ' + x2 + ',' + cy2 + ' ' + x2 + ',' + y2);
+          p.setAttribute('stroke', stroke);
+          p.setAttribute('stroke-width', sw);
+          p.setAttribute('fill', 'none');
+          p.setAttribute('stroke-linecap', 'round');
+          p.setAttribute('opacity', '0.72');
+          svg.appendChild(p);
+        });
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', layoutChain);
+    } else {
+      layoutChain();
+    }
+    var __chainT;
+    window.addEventListener('resize', function(){
+      clearTimeout(__chainT);
+      __chainT = setTimeout(layoutChain, 120);
+    });
+    /* 字体加载后再布局一次(节点高度可能因 webfont 改变) */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(layoutChain);
+    }
+  })();
+</script>
+</body>
+</html>
