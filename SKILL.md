@@ -27,6 +27,12 @@ description: 给定一个投资主题/趋势,复用交易者 Serenity(@aleabitor
 - 报告 SPEC 中相对路径从本技能根目录解析；可用 `tracking_file` 选择自己的 CSV。现有默认路径兼容保留。`shell_from` 缺省时使用内置模板，无需私库或驾驶舱。
 - 发布前可用 `python scripts/verify_report.py <报告> --scan <输入> --tracking <跟踪表> --strict` 完整对账。严格模式的输入缺失和数字错配必须先解决。
 
+## 可选驾驶舱
+
+只有用户需要管理、跟踪或复盘已有研究时，才使用 [cockpit/README.md](cockpit/README.md) 的本地驾驶舱。核心研究流程不依赖它。
+
+默认 `python cockpit/run.py` 读取只读历史演示，不抓取行情。用户自己的研究须明确指定目录；报告 SPEC 的 `out` 与 `tracking_file` 应指向该目录。取价、告警核对和定时任务分别由用户手动触发或显式启用。驾驶舱的“猎手／覆盖”是显示范围，不是龙头视角。
+
 ## 工作流(7 步)
 
 **Step 1 · 确认资本开支确定性**

@@ -10,9 +10,22 @@
 >
 > 给定一个投资主题,复用 X 博主 **Serenity** 公开分享的"供应链瓶颈逆向映射"方法,独立挖出被市场忽视的**上游瓶颈股**(而非抄他已喊过的票)。
 
-## v0.2 · 核心工具、可复现示例与 A 股说明
+## v0.2 · 核心工具 + 可选本地驾驶舱
 
-保留原有七步研究方法、九大原型和判定阈值。本版修复独立目录运行、供应商代码转换、行情复权、报告元数据及提交校验；不包含驾驶舱或龙头视角扩展。
+保留原有七步研究方法、九大原型和判定阈值。本版修复独立目录运行、供应商代码转换、行情复权、报告元数据及提交校验，并提供可选本地驾驶舱。核心技能仍独立可用，龙头视角不在本次范围。
+
+**2026-09-29 同号更新：当前发布包标记为 `cockpit-r2`，已替换此前仅含核心工具的 v0.2.0 文件。曾下载旧包的用户请重新下载并核对 SHA256SUMS.txt。**
+
+驾驶舱提供主题地图、跟踪筛选、报告阅读、K 线与判定历史、手动告警、快照及计分卡。默认进入只读历史演示，接入个人目录后才启用手动取价；不会自动搜索或上传私库。
+
+完整 ZIP / `.skill` 内已包含前端页面，使用驾驶舱不需要 Node.js。推荐 Python 3.12，在项目虚拟环境中安装后启动：
+
+```bash
+python -m pip install -r cockpit/requirements.txt
+python cockpit/run.py
+```
+
+打开 `http://127.0.0.1:8000`。源码克隆者先构建前端；个人目录初始化与完整步骤见 [驾驶舱说明](cockpit/README.md)。
 
 **先验证能跑通（Python 3.10+，不需要密钥或联网）：**
 
@@ -194,9 +207,9 @@ MIT (see `LICENSE`). Methodology credit: **Serenity (@aleabitoreddit)** — this
 ```bash
 python -m unittest discover -s tests -v
 python scripts/run_demo.py
-python scripts/build_release.py --smoke
+python scripts/build_release.py --smoke --cockpit-smoke
 ```
 
-这些检查使用离线输入。GitHub Actions 在 Windows / Linux 验证核心测试，并检查发布包在新目录解压后可运行。价格源实际可用性需另行抽样，离线通过不等于全市场实时数据通过。
+核心测试与示例使用离线输入。完整发布包的检查另需安装驾驶舱测试依赖、构建 cockpit/web；步骤见驾驶舱说明。GitHub Actions 在 Windows / Linux 验证核心与驾驶舱，并检查发布包在新目录解压后可运行。价格源实际可用性需另行抽样，离线通过不等于全市场实时数据通过。
 
 可选提交钩子：`python scripts/install_pre_commit.py`。它只安装当前仓库的校验入口；已有钩子或自定义 hooksPath 会保留，并提示手动接入。

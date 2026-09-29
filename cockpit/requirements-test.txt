@@ -1,0 +1,2 @@
+# Test client is included in the validated optional environment.
+-r requirements-lock.txt

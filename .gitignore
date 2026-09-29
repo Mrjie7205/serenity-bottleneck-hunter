@@ -16,6 +16,14 @@ reports/
 .playwright-cli/
 tracking/_score_price_cache.json
 tracking/_score_run.log
+local-data/
+cockpit/.runtime/
+cockpit/.venv/
+cockpit/web/node_modules/
+cockpit/web/dist/
+cockpit/web/*.tsbuildinfo
+cockpit/backend/.env
+.cockpit/
 
 # OS
 .DS_Store

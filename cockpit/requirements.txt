@@ -1,0 +1,2 @@
+# Reproduce the validated optional Cockpit environment (Python 3.12).
+-r requirements-lock.txt

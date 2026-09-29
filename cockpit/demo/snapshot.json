@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "data_version": "f6dbc7ad93988f030abe71a7ba31649839d8870bf78601f195c3d872d79ca769",
+  "generated_at": "2026-06-02 00:00:00",
+  "symbol_count": 2,
+  "error_count": 0,
+  "errors": [],
+  "benchmark_errors": [],
+  "complete": false,
+  "partial": false,
+  "benchmarks": {},
+  "symbols": {
+    "DDOG.US": {
+      "last": 277.49,
+      "last_date": "2026-06-01",
+      "range_pos_6mo_pct": 99,
+      "pct_off_6mo_high": -0.4,
+      "ret_1m_pct": 97.5,
+      "ret_3m_pct": 148.3,
+      "above_sma50": true,
+      "stage": "extended/parabolic (already ran hot -> late for Mode A; DON'T chase, wait for pullback)",
+      "stage_key": "parabolic",
+      "provider": "public-historical-demo"
+    },
+    "NET.US": {
+      "last": 270.82,
+      "last_date": "2026-06-01",
+      "range_pos_6mo_pct": 100,
+      "pct_off_6mo_high": -0.1,
+      "ret_1m_pct": 24.5,
+      "ret_3m_pct": 51.4,
+      "above_sma50": true,
+      "stage": "extended/parabolic (already ran hot -> late for Mode A; DON'T chase, wait for pullback)",
+      "stage_key": "parabolic",
+      "provider": "public-historical-demo"
+    }
+  },
+  "picks": {},
+  "data_quality": null
+}

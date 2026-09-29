@@ -13,6 +13,10 @@ ROOT = Path(__file__).resolve().parents[1]
 ROOT_FILES = ("SKILL.md", "README.md", "LICENSE", "VERSION", "CHANGELOG.md", ".env.example",
               "requirements.txt", "requirements-ashare.txt", "requirements-lock.txt")
 SOURCE_DIRS = ("agents", "scripts", "reference", "examples", "tests")
+COCKPIT_FILES = ("README.md", "run.py", "requirements.txt", "requirements-test.txt", "requirements-lock.txt",
+    "THIRD_PARTY_NOTICES.txt", "web/package.json", "web/package-lock.json", "web/tsconfig.json",
+    "web/vite.config.ts", "web/index.html")
+COCKPIT_DIRS = ("backend", "demo", "tests", "web/src", "web/tests", "web/dist")
 TRACKING_FILES = ("forward_picks.csv", "theme_benchmark.csv", "cross_theme_index_snapshot.csv",
     "scorecard.md", "cross_theme_scan.py", "score_tracker.py", "check_desc_freshness.py",
     "_full_scan.py", "_scan_agent.py", "_scan_agent_cn.py", "_scan_AIAgent_CN_v1.json",
@@ -26,6 +30,12 @@ def release_files(root=ROOT):
                      and '__pycache__' not in p.parts and p.suffix != '.pyc' and not p.name.startswith('.'))
     # Only the existing, explicitly public tracking assets; generated caches are excluded.
     paths.extend(root / 'tracking' / name for name in TRACKING_FILES)
+    if not (root / 'cockpit/web/dist/index.html').is_file():
+        raise FileNotFoundError('Build the optional Cockpit UI with npm --prefix cockpit/web run build before packaging.')
+    paths.extend(root / 'cockpit' / name for name in COCKPIT_FILES)
+    for directory in COCKPIT_DIRS:
+        paths.extend(p for p in (root / 'cockpit' / directory).rglob('*') if p.is_file()
+                     and '__pycache__' not in p.parts and p.suffix != '.pyc' and not p.name.startswith('.'))
     for path in paths:
         if path.is_symlink() or not path.resolve().is_relative_to(root.resolve()):
             raise ValueError('Release file is not a regular in-repository asset: '+str(path))
@@ -55,13 +65,14 @@ def build(output):
             manifest[relative] = hashlib.sha256(payload).hexdigest()
     skill = archive.with_suffix('.skill')
     shutil.copyfile(archive, skill)
-    (destination / 'manifest.json').write_text(json.dumps({'version':version,'files':manifest},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    (destination / 'manifest.json').write_text(json.dumps({'version':version,'revision':'cockpit-r2',
+        'cockpit_included':True,'files':manifest},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     checksums = ''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in (archive, skill))
     (destination / 'SHA256SUMS.txt').write_text(checksums,encoding='utf-8')
     return archive
 
 
-def smoke_archive(archive):
+def smoke_archive(archive, cockpit=False):
     with tempfile.TemporaryDirectory() as folder:
         with zipfile.ZipFile(archive) as zipped:
             # This archive was assembled only from the fixed allowlist above.
@@ -73,14 +84,18 @@ def smoke_archive(archive):
         extracted = Path(folder) / 'serenity-bottleneck-hunter'
         subprocess.run([sys.executable, str(extracted/'scripts/run_demo.py')], cwd=folder, check=True)
         subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', str(extracted/'tests'), '-q'], cwd=folder, check=True)
+        if cockpit:
+            subprocess.run([sys.executable, str(extracted/'cockpit/run.py'), '--check'], cwd=folder, check=True)
+            subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', str(extracted/'cockpit/tests'), '-q'], cwd=folder, check=True)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', default=str(ROOT/'dist'))
     parser.add_argument('--smoke', action='store_true')
+    parser.add_argument('--cockpit-smoke', action='store_true', help='Also validate Cockpit; requires its test dependencies')
     args = parser.parse_args()
     result = build(args.output)
-    if args.smoke:
-        smoke_archive(result)
+    if args.smoke or args.cockpit_smoke:
+        smoke_archive(result, cockpit=args.cockpit_smoke)
     print(result)

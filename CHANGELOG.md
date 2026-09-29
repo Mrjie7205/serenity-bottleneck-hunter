@@ -1,8 +1,22 @@
 # Changelog
 
-## v0.2.0 — 2026-09-29
+## v0.2.0 — 2026-09-29 · Cockpit replacement (cockpit-r2)
 
-Core tools, reproducible examples and documentation. The seven-step research workflow, nine archetypes, timing thresholds, valuation scoring and existing Codex/Claude entry points remain in place. Cockpit and leader-lens extensions are not included in this release.
+This explicitly requested same-version replacement adds an optional local Cockpit and replaces the earlier v0.2.0 tag target and release assets. The release URL and version number stay unchanged; checksums and the manifest revision identify the replacement. Earlier source history remains available at commit `58ae022`.
+
+- Add the existing research-management interface as an optional module: map, opportunities, tracker, report viewer, K-line annotations, snapshots, alerts and scorecard.
+- Default to two read-only, previously public historical examples. No market-data requests or automatic scheduled tasks run in demo mode. No synthetic returns or chart history are presented as real data.
+- Introduce explicit personal data directories and empty initialization templates. Runtime state stays under the selected directory; private datasets, credentials and caches are excluded from releases.
+- Bundle the compiled UI in both ZIP and `.skill` packages. Normal local use requires Python dependencies, but not Node.js; the original core skill still works independently.
+- Retain stable snapshot identities, atomic alert writes, failed-task recovery and accurate partial-data reporting.
+- Restrict the server to loopback, guard local mutation/quote endpoints and sandbox report documents.
+- Update frontend build and routing dependencies, retaining the existing interface and clearing the reported npm advisories at acceptance time.
+- Do not include the leader-lens extension, a cloud service, or any private research collection.
+
+### Earlier v0.2.0 core-only build
+
+
+Core tools, reproducible examples and documentation. The seven-step research workflow, nine archetypes, timing thresholds, valuation scoring and existing Codex/Claude entry points remain in place. The original core-only build did not include Cockpit; the replacement above adds it as optional. The leader lens remains excluded.
 
 ### Reliability
 
