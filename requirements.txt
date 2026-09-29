@@ -1,0 +1,3 @@
+# Optional network-backed tools. The bundled historical demo and tests use stdlib only.
+yfinance>=0.2.65,<2
+python-dotenv>=1.0,<2

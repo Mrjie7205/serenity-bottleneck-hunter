@@ -1,0 +1,13 @@
+{
+  "source_repository": "https://github.com/Mrjie7205/serenity-bottleneck-hunter",
+  "source_commit": "15bb654f41cb39f442ba2076b4023436a0d7554d",
+  "source_file": "tracking/_scan_AIAgent_v1.json",
+  "symbols": [
+    "DDOG.US",
+    "NET.US"
+  ],
+  "live_price_requests": 0,
+  "warning": "Historical public fixtures only; not refreshed and not current recommendations.",
+  "source_sha256_lf": "7252f6da9f557512b355fcbcd38d783c4bc5ff09929e6ab3a589491dc376d1c4",
+  "source_git_blob": "7a3ea0b7c8824aad99087d7481df6962658180d6"
+}

@@ -91,12 +91,13 @@ def check_sections(html):
 
 # ───────────────────────── B/C/D 组:逐候选 ─────────────────────────
 def split_candidates(html):
-    idxs = [m.start() for m in re.finditer(r'<div class="tk">', html)]
+    idxs = [m.start() for m in re.finditer(r'<div class="tk"[^>]*>', html)]
     return [html[s:(idxs[i + 1] if i + 1 < len(idxs) else len(html))]
             for i, s in enumerate(idxs)]
 
 def cand_ticker(chunk):
-    return (_first(chunk, r"/chart/([A-Za-z0-9.\-]+)")
+    return (_first(chunk, r'data-ticker="([A-Za-z0-9.\-]+)"')
+            or _first(chunk, r"/chart/([A-Za-z0-9.\-]+)")
             or _first(chunk, r'<div class="tk">([A-Za-z0-9.\-]+)'))
 
 def check_candidates(html, scan_by, fp_by):
@@ -112,7 +113,7 @@ def check_candidates(html, scan_by, fp_by):
         if not badge and not has_chart:
             continue
         # 合并双标行(如 "ATI / CRS"):一行两只,数字为代表值,跳过逐标的数字核对
-        disp = _first(chunk, r'<div class="tk">([^<]*)') or ""
+        disp = _first(chunk, r'<div class="tk"[^>]*>([^<]*)') or ""
         merged = "/" in disp
         has_mo = 'class="mo' in chunk
         nm = (_first(chunk, r'class="t">([^<·]+)') or "").strip()
@@ -257,12 +258,14 @@ def check_styled(html):
 
 # ───────────────────────── scan 自动定位 ─────────────────────────
 def find_scan(html, explicit):
-    if explicit and os.path.exists(explicit): return explicit
+    if explicit:
+        return explicit if os.path.exists(explicit) else None
     base = {s.split(".")[0].upper() for s in re.findall(r"/chart/([A-Za-z0-9.\-]+)", html)}
     best, bestn = None, 0
     for p in glob.glob(os.path.join(HERE, "..", "tracking", "_scan_*.json")):
         try:
-            data = json.load(open(p, encoding="utf-8"))
+            with open(p, encoding="utf-8-sig") as handle:
+                data = json.load(handle)
         except Exception:
             continue
         if not isinstance(data, list): continue
@@ -292,13 +295,17 @@ def load_fp(path):
 
 # ───────────────────────── main ─────────────────────────
 def main():
+    F.clear()
     args = sys.argv[1:]
-    report = scan_arg = None
+    report = scan_arg = tracking_arg = None
+    strict = False
     today = datetime.date.today(); N = 30
     i = 0
     while i < len(args):
         a = args[i]
         if a == "--scan" and i + 1 < len(args): scan_arg = args[i + 1]; i += 2; continue
+        if a == "--tracking" and i + 1 < len(args): tracking_arg = args[i + 1]; i += 2; continue
+        if a == "--strict": strict = True; i += 1; continue
         if a == "--today" and i + 1 < len(args): today = datetime.date.fromisoformat(args[i + 1]); i += 2; continue
         if a == "--fresh-days" and i + 1 < len(args): N = int(args[i + 1]); i += 2; continue
         if not a.startswith("--"): report = a
@@ -306,21 +313,33 @@ def main():
     if not report or not os.path.exists(report):
         print(__doc__); return 2
 
-    html = open(report, encoding="utf-8", errors="replace").read()
+    with open(report, encoding="utf-8", errors="replace") as handle:
+        html = handle.read()
     print(f"verify_report · {os.path.basename(report)}  (today={today}, fresh<{N}d)")
 
     scan_path = find_scan(html, scan_arg)
     scan_rows = load_scan(scan_path) if scan_path else None
+    if scan_arg and not scan_rows:
+        print('[ERROR] 指定的 scan 不存在、为空或格式无效'); return 2
     scan_by = index(scan_rows, lambda r: r["ticker"]) if scan_rows else {}
     if scan_rows: print(f"· 价格对账源: {os.path.basename(scan_path)}（{len(scan_rows)} 标的)")
     else: add("C数据", WARN, "-", "未找到匹配 scan JSON,跳过价格对账(用 --scan 指定)")
 
-    fp_rows = load_fp(os.path.join(HERE, "..", "tracking", "forward_picks.csv"))
+    fp_rows = load_fp(tracking_arg or os.path.join(HERE, "..", "tracking", "forward_picks.csv"))
+    if tracking_arg and fp_rows is None:
+        print('[ERROR] 指定的 tracking 文件不存在或格式无效'); return 2
     fp_by = index(fp_rows, lambda r: r["ticker"]) if fp_rows else None
     if fp_rows is None: add("D入轨", WARN, "-", "未找到 forward_picks.csv,跳过入轨检查")
 
     check_sections(html)
     check_candidates(html, scan_by, fp_by)
+    if strict:
+        if not scan_rows or fp_rows is None:
+            add('C数据', BLOCK, '-', '严格模式需要有效 scan 和 tracking')
+        for chunk in split_candidates(html):
+            ticker = cand_ticker(chunk)
+            if not lookup_map(scan_by, ticker):
+                add('C数据', BLOCK, ticker or '-', '严格模式下每个候选必须有对应 scan')
     check_status(html, today, N)
     check_hygiene(html)
     check_styled(html)
@@ -337,7 +356,7 @@ def main():
             tag = "【拦】" if sev == BLOCK else "【警】"
             print(f"  {tag} [{where}] {msg}")
     print(f"\n{'='*52}")
-    if blocks:
+    if blocks or (strict and warns):
         print(f"[FAIL] {len(blocks)} 个【拦】+ {len(warns)} 个【警】— 别宣布完成,先修【拦】")
         return 1
     print(f"[PASS] 0 个【拦】, {len(warns)} 个【警】(只提醒,不阻断)")
@@ -345,7 +364,8 @@ def main():
 
 def load_scan(path):
     try:
-        data = json.load(open(path, encoding="utf-8"))
+        with open(path, encoding="utf-8-sig") as handle:
+            data = json.load(handle)
         return [d for d in data if isinstance(d, dict) and d.get("ticker")]
     except Exception:
         return None

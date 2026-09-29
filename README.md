@@ -10,6 +10,24 @@
 >
 > 给定一个投资主题,复用 X 博主 **Serenity** 公开分享的"供应链瓶颈逆向映射"方法,独立挖出被市场忽视的**上游瓶颈股**(而非抄他已喊过的票)。
 
+## v0.2 · 核心工具、可复现示例与 A 股说明
+
+保留原有七步研究方法、九大原型和判定阈值。本版修复独立目录运行、供应商代码转换、行情复权、报告元数据及提交校验；不包含驾驶舱或龙头视角扩展。
+
+**先验证能跑通（Python 3.10+，不需要密钥或联网）：**
+
+```bash
+python scripts/run_demo.py
+```
+
+打开生成的 `reports/demo-report.html`。示例使用公库原已公开的 2026-06-01 历史快照，自动执行严格数字对账，并写到独立演示跟踪文件；它不改动正式历史表，也不代表当前投资判断。
+
+- [查看演示 HTML（下载后用浏览器打开）](examples/demo-report.html) · [示例输入和复现说明](examples/README.md)
+- [A 股／港股／美股的数据来源与安装](reference/DATA_SOURCES.md) · [完整更新日志](CHANGELOG.md)
+- [下载 ZIP / .skill 发布包](https://github.com/Mrjie7205/serenity-bottleneck-hunter/releases/tag/v0.2.0)（解压后入口仍为 `SKILL.md`）
+
+已有用户保留自己的研究 CSV、`.env` 和自定义报告。公开历史样本目前为 418 条，最新记录到 2026-06-12；旧 scorecard 和 scan 均为带日期的档案，不自动代表当前结果。真实取价、估值和评分另需安装依赖，并可能消耗数据服务额度。
+
 ## ⚡ 30 秒装上 / Quick start
 
 ### OpenAI Codex
@@ -57,7 +75,7 @@ git clone https://github.com/Mrjie7205/serenity-bottleneck-hunter.git ~/.claude/
 
 **claude.ai / Claude Desktop**:把仓库打包上传为 skill,或直接把 `SKILL.md` 拖进对话让 Claude 照着执行。
 
-**价格数据(可选)**:`export EODHD_API_KEY=你的key`([EODHD](https://eodhd.com) 全球覆盖最广,海外股推荐);没有 key 时自动回退 yfinance(美股 OK)。**禁止用 WebSearch 猜价格** — 这是 skill 的硬纪律。
+**价格数据(可选，先安装 `requirements.txt`；A 股另装 `requirements-ashare.txt`)**:`export EODHD_API_KEY=你的key`([EODHD](https://eodhd.com) 全球覆盖最广,海外股推荐);没有 key 时自动回退 yfinance(美股 OK)。**禁止用 WebSearch 猜价格** — 这是 skill 的硬纪律。
 
 ## 📊 输出长什么样 / Report anatomy
 
@@ -146,7 +164,7 @@ tracking/
 
 ## Data / 数据
 
-- **Price & timing**: `scripts/price.py` 自动按 **EODHD(`EODHD_API_KEY`)→ yfinance** 顺序回退。EODHD 全球覆盖最广(海外股推荐);yfinance 无需 key,美股 OK 但非美股常有 gap。**WebSearch 一律不用于抓价格——猜测视为流程错误**。
+- **Price & timing**: `scripts/price.py` 按市场选择来源并统一到供应商提供的复权口径，见[数据来源说明](reference/DATA_SOURCES.md)。A 股先尝试 AKShare 前复权，再尝试 Yahoo 和 EODHD；其他市场使用 EODHD→Yahoo。所有返回均标明来源，覆盖和网络可用性不作保证。**WebSearch 一律不用于抓价格——猜测视为流程错误**。
 - **Valuation(二轴的第二轴)**: `scripts/price.py` 的 `valuation()` 多源 —— **A股 → akshare**(百度 PE-TTM + 东财券商一致预期算 forward + 东财财务增速)· **美股 → yfinance** · 缺字段互兜底 · 带 `src` 可交叉验证。估值是全 skill 最弱的数据(单源不可信),故 A股改用中国源 + sanity 层拦小基数算爆的异常值(如 +610% 增速、749x trailing)。
 - **Fundamentals & bottleneck judgment**: web research per candidate — the skill's real edge is qualitative (is it a true single-source chokepoint?), which no data feed provides.
 
@@ -170,3 +188,15 @@ The only credible test is **forward / out-of-sample**: see `tracking/forward_pic
 ## License / 协议
 
 MIT (see `LICENSE`). Methodology credit: **Serenity (@aleabitoreddit)** — this is an independent, fan-made distillation of publicly shared ideas.
+
+## 开发与验收
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/run_demo.py
+python scripts/build_release.py --smoke
+```
+
+这些检查使用离线输入。GitHub Actions 在 Windows / Linux 验证核心测试，并检查发布包在新目录解压后可运行。价格源实际可用性需另行抽样，离线通过不等于全市场实时数据通过。
+
+可选提交钩子：`python scripts/install_pre_commit.py`。它只安装当前仓库的校验入口；已有钩子或自定义 hooksPath 会保留，并提示手动接入。

@@ -14,10 +14,11 @@ ticker-verify: skip
   render(SPEC)                                   # 薄生成器里(见 tracking/_gen_mlcc_report.py)
   python render_report.py --spec theme_spec.json # 或 CLI(JSON spec)
 """
-import os, re, csv, json
+import os, re, csv, json, tempfile
+from html import escape
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = os.path.join(HERE, "..", "..")
+ROOT = os.path.abspath(os.path.join(HERE, ".."))
 CCY = {"T":"¥","SHE":"¥","SHG":"¥","SS":"¥","SZ":"¥","TW":"NT$","KO":"₩","HK":"HK$",
        "US":"$","TO":"C$","PA":"€","L":"£","KS":"₩"}
 
@@ -70,14 +71,26 @@ def justify(d):
 
 def ruler(S, tk):
     d=S[tk]; c=cy(tk); r=d["range_pos_6mo_pct"]; cl=scls(r); clamp=min(90,max(10,r))
+    raw_stage=(d.get("stage") or "").lower()
+    if "downtrend" in raw_stage:
+        stage_cl, stage_label, stage_small = "range", "DOWNTREND/BASE", "下行/筑底"
+    elif "extended" in raw_stage or "parabolic" in raw_stage:
+        stage_cl, stage_label, stage_small = "ext", "EXTENDED", "已抛物线"
+    elif "uptrend" in raw_stage:
+        stage_cl, stage_label, stage_small = "early", "EARLY-UP", "上升初段"
+    elif "range" in raw_stage or "neutral" in raw_stage:
+        stage_cl, stage_label, stage_small = "range", "RANGE/NEUTRAL", "横盘/中性"
+    else:
+        stage_cl = cl
+        stage_label = "EXTENDED" if cl=="ext" else "EARLY-UP" if cl=="early" else "RANGE/BASE"
+        stage_small = "已抛物线" if cl=="ext" else "刚启动" if cl=="early" else "横盘/回调"
     return (f'<div class="mo s-{cl}"><div class="ends"><span>6月低 <b>{c}{d["low_6mo"]:.2f}</b></span>'
             f'<span><b>{c}{d["high_6mo"]:.2f}</b> 6月高</span></div>'
             f'<div class="gauge"><div class="track"></div><div class="dot" style="left:{r}%"></div>'
             f'<span class="cur" style="left:{clamp}%">{c}{d["last"]:.2f}</span></div>'
             f'<div class="lbl"><span class="word">{word(r)}</span> · 距高点 <b>{d["pct_off_6mo_high"]:.1f}%</b><br>'
             f'近1月 <b>{(d["ret_1m_pct"] or 0):+.1f}%</b> · 近3月 <b>{(d["ret_3m_pct"] or 0):+.1f}%</b>{justify(d)[1]}</div></div>'
-            f'<div class="stage-t {cl}">{("EXTENDED" if cl=="ext" else "EARLY-UP" if cl=="early" else "RANGE/BASE")}'
-            f'<small>{("已抛物线" if cl=="ext" else "刚启动" if cl=="early" else "横盘/回调")}</small></div>')
+            f'<div class="stage-t {stage_cl}">{stage_label}<small>{stage_small}</small></div>')
 
 def badge(v, tier):
     cl={"green":"b-green","amber":"b-amber","red":"b-red"}[v]; ic={"green":"🟢","amber":"🟡","red":"🔴"}[v]
@@ -94,14 +107,17 @@ def _redteam(ra, kill, fb=""):
           f'font-size:12px;line-height:1.5;color:#2d4010"><b>§B 证伪(🟢 必带)</b> 满足任一即认错:· {fb}</div>') if fb else ""
     return _SA_HEAD.format(sb_label=(" + §B 证伪" if sb else ""), ra=ra, kill=kill, sb=sb)
 
-def card(S, x):
+def card(S, x, cockpit_url=None, demo=False):
     d=S[x["tk"]]; c=cy(x["tk"])
-    head=(f'<div class="tk">{x["tk"].split(".")[0]}<a class="ck" href="http://localhost:5173/chart/{x["tk"]}" '
-          f'title="Cockpit K线">📈</a><span class="px">{c}{d["last"]:.2f}</span></div>')
-    g="过" if x["v"]=="green" else "半过"
+    chart = (f'<a class="ck" href="{escape(cockpit_url.rstrip("/"), quote=True)}/chart/{escape(x["tk"], quote=True)}" title="K线">📈</a>'
+             if cockpit_url else '')
+    head=(f'<div class="tk" data-ticker="{escape(x["tk"], quote=True)}">{x["tk"].split(".")[0]}'
+          f'{chart}<span class="px">{c}{d["last"]:.2f}</span></div>')
+    g="未评估" if demo else ("过" if x["v"]=="green" else "半过")
+    other="未评估" if demo else ("半过" if x["v"]=="green" else "不过")
     nm=(f'<div class="nmcell"><div class="t">{x["t"]}</div><div class="d">{x["d"]}</div>{badge(x["v"],x["tier"])}'
-        f'<div class="gates-mini"><span class="mid">🔒 真瓶颈 {g}</span><span class="no">👁 前机构 {"半过" if x["v"]=="green" else "不过"}</span>'
-        f'<span class="mid">💰 便宜 {"半过" if x["v"]=="green" else "不过"}</span></div>'
+        f'<div class="gates-mini"><span class="mid">🔒 真瓶颈 {g}</span><span class="no">👁 前机构 {other}</span>'
+        f'<span class="mid">💰 便宜 {other}</span></div>'
         f'<details class="more"><summary>详情:原型 / 论点</summary><p><b>原型</b> {x["arch"]} · <b>论点</b> {x["th"]}</p></details>'
         f'{_redteam(x["ra"], x["kill"], x.get("fb","") if x["v"]=="green" else "")}</div>')
     return f'<div class="row">{head}{nm}{ruler(S,x["tk"])}</div>'
@@ -135,14 +151,42 @@ def chain_viz(S, spec):
 
 def section(tag, inner): return f'<section><div class="wrap rv"><div class="tag">{tag}</div>{inner}</div></section>'
 
+def _metadata_head(head, spec):
+    head = re.sub(r'<!--.*?-->', '', head, flags=re.S)
+    head = re.sub(r'<script\b[^>]*\bid=["\']serenity-report-meta["\'][^>]*>.*?</script>', '', head, flags=re.S | re.I)
+    metadata = {"schema_version": 1, "report_date": spec["date"], "theme": spec["theme_tag"],
+                "price_asof": spec["snapshot"], "demo": bool(spec.get("demo", False))}
+    encoded = json.dumps(metadata, ensure_ascii=False).replace('<', '\\u003c')
+    return head.replace('</head>', '<link rel="icon" href="data:,">\n<script type="application/json" id="serenity-report-meta">'+encoded+'</script>\n</head>')
+
+
+def _atomic_text(path, text):
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix='.serenity-', suffix='.tmp', dir=os.path.dirname(os.path.abspath(path)))
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8', newline='') as handle:
+            handle.write(text)
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def render(spec):
-    S={d["ticker"]: d for d in json.load(open(_p(spec["scan"]), encoding="utf-8"))}
-    cards="\n".join(card(S,x) for x in spec["candidates"])
+    with open(_p(spec["scan"]), encoding="utf-8-sig") as handle:
+        S={d["ticker"]: d for d in json.load(handle)}
+    required = ("last", "low_6mo", "high_6mo", "range_pos_6mo_pct", "pct_off_6mo_high", "ret_1m_pct", "ret_3m_pct", "stage")
+    for candidate in spec["candidates"]:
+        record = S[candidate["tk"]]
+        if any(key not in record for key in required):
+            raise ValueError('scan lacks required price fields for '+candidate['tk'])
+    cards="\n".join(card(S,x,spec.get("cockpit_url"),spec.get("demo", False)) for x in spec["candidates"])
     merged="\n".join(merged_row(m) for m in spec.get("merged_rows",[]))
     capex=" &nbsp;·&nbsp; ".join(f'<b>{a}</b> {b}' for a,b in spec["capex_stats"])
     acts="".join(f'<div class="tp-card"><div class="tp-k">{k}</div><div class="tp-t">{t}</div><div class="tp-d">{d}</div><div class="tp-act">{a}</div></div>' for k,t,d,a in spec["action_cards"])
     foot="".join(f'<p class="note">{n}</p>' for n in spec["footer_notes"])
-    body=f'''<header class="hero"><div class="wrap"><h1>{spec["title"]}</h1>
+    demo_banner = '<p class="note"><b>历史演示 · 仅用于验证工具和报告结构，不代表当前行情或投资判断。</b></p>' if spec.get('demo') else ''
+    body=f'''<header class="hero"><div class="wrap"><h1>{spec.get("title_html", escape(spec["title"]))}</h1>{demo_banner}
 <p class="sub">{spec["subtitle"]}</p></div></header>
 {section("◆ 一句话结论", spec["verdict"])}
 {section("Step 1 · 资本开支确定性", f'<div class="callout">{capex}</div><p class="note">{spec["capex_note"]}</p>')}
@@ -153,20 +197,27 @@ def render(spec):
 {section("Step 5 · 三道闸门", spec["gates"])}
 {section("⭐ 跨主题信号", spec["cross_theme"])}
 {section("Step 7 · 落地结论", spec["landing"])}
-<footer><div class="wrap">{foot}<p class="note disc">{spec["disclaimer"]}</p></div></footer>'''
-    src=open(_p(spec["shell_from"]), encoding="utf-8").read()
-    head=re.sub(r"<title>.*?</title>", f'<title>{spec["title"]}</title>', src[:src.index("</head>")+7], flags=re.S)
+<footer><div class="wrap">{foot}<details class="glossary-section"><summary>术语速查</summary><div class="glossary-list"></div></details><p class="note disc">{spec["disclaimer"]}</p></div></footer>'''
+    with open(_p(spec.get("shell_from", "reference/report_template.html")), encoding="utf-8") as handle:
+        src=handle.read()
+    shell_head='<!DOCTYPE html>\n'+src[src.index('<html'):src.index("</head>")+7]
+    head=re.sub(r"<title>.*?</title>", lambda _: f'<title>{escape(spec["title"])}</title>', shell_head, flags=re.S)
+    head=_metadata_head(head, spec)
+    if spec.get("extra_css"):
+        head=head.replace('</head>', '<style>'+spec['extra_css']+'</style></head>')
     scripts=src[src.index("<script>"): src.rindex("</script>")+len("</script>")]
     html=head+f'\n<body>\n{body}\n'+scripts+'\n</body>\n</html>'
-    out=_p(spec["out"]); open(out,"w",encoding="utf-8").write(html)
+    out=_p(spec["out"]); _atomic_text(out, html)
     print(f"render_report → {out} ({len(html)} chars · 克隆外壳 {len(scripts)} 脚本)")
     if spec.get("forward_picks", True): _write_fp(spec, S)
     return out
 
 def _write_fp(spec, S):
-    fp=os.path.join(HERE,"..","tracking","forward_picks.csv")
-    if not os.path.exists(fp): return
-    existing={(r[1],r[2]) for r in list(csv.reader(open(fp,encoding="utf-8")))[1:]}
+    fp=_p(spec.get("tracking_file", "tracking/forward_picks.csv"))
+    if not os.path.exists(fp):
+        _atomic_text(fp, 'record_date,theme,eodhd_symbol,name,tier,archetypes,entry_price,currency,entry_stage,skill_verdict,thesis,invalidation\n')
+    with open(fp, encoding="utf-8-sig") as source:
+        existing={(r[1],r[2]) for r in list(csv.reader(source))[1:] if len(r)>=3}
     theme=spec["theme_tag"]; n=0
     with open(fp,"a",encoding="utf-8",newline="") as f:
         w=csv.writer(f)
@@ -176,7 +227,7 @@ def _write_fp(spec, S):
             if x["v"] not in TIERZH or (theme, x["tk"]) in existing: continue
             d = S[x["tk"]]
             w.writerow([spec["date"], theme, x["tk"], d["name_zh"], TIERZH[x["v"]], x["arch"],
-                        f'{d["last"]:.2f}', {"¥":"CNY/JPY","NT$":"TWD","₩":"KRW"}.get(cy(x["tk"]), "USD"),
+                        f'{d["last"]:.2f}', {"¥":"JPY" if x["tk"].endswith(".T") else "CNY","NT$":"TWD","₩":"KRW","HK$":"HKD","C$":"CAD","€":"EUR","£":"GBP","$":"USD"}.get(cy(x["tk"]), "USD"),
                         d.get("stage","")[:30], VERD[x["v"]], x["th"][:60], x.get("inv","")])
             n += 1
     print(f"forward_picks +{n}")
@@ -184,6 +235,7 @@ def _write_fp(spec, S):
 if __name__ == "__main__":
     import sys
     if "--spec" in sys.argv:
-        render(json.load(open(sys.argv[sys.argv.index("--spec")+1], encoding="utf-8")))
+        with open(sys.argv[sys.argv.index("--spec")+1], encoding="utf-8-sig") as handle:
+            render(json.load(handle))
     else:
         print(__doc__)

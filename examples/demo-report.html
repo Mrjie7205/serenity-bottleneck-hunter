@@ -1,32 +1,9 @@
 <!DOCTYPE html>
-<!--
-  ============================================================================
-  Serenity Bottleneck Hunter — HTML 报告模板
-  ----------------------------------------------------------------------------
-  用法:复制本文件 → 填充所有 {{PLACEHOLDER}} 与 <!-- FILL: ... --> 注释处 →
-        另存为 reports/<主题>_分析报告.html。
-  规则(见 SKILL.md「输出模板(HTML)」;2026-06-13 升级:水位标尺/头条位/判定史/trigger分层/枢纽瓶颈):
-   • 单文件、样式内联,仅 Google Fonts CDN 可外链。
-   • 头条位(.top-picks)必填:最多 2 张"本次行动点"卡,无视 stage 排序置顶。
-   • 候选 leaderboard 按 stage 排序:early-uptrend 在前、extended 在后;下游对照合并为一行。
-   • 动量单元 = 水位标尺:.dot 的 left = range_pos_6mo_pct;.word 人话水位
-     (贴顶≥90 / 高位70-89 / 中位30-69 / 低位10-29 / 贴底<10);附注 距高点 off% + 近1月/近3月。
-     stage class:s-early(绿) / s-range(琥珀) / s-ext(红)。
-   • 判定 badge:  b-green(🟢候选) / b-amber(🟡观望) / b-red(🔴排除) / b-gray(剔除/不可投)
-   • 🟡 必配 trigger,且分层:.trig.auto(纯价格，可由用户自己的工具核对)/ .trig.manual(需人工)。
-   • 行内 .gates-mini 三道闸标的级打分;forward_picks 有旧判定的标的必带 .hist 判定史
-     (旧 entry → 今价 ±%,用真实数字算,勿凭印象)。
-   • 密度纪律:行内只留 判定/trigger/stage + 一句话;原型/基本面要点/情景/风险收进 details.more。
-   • 链路图瓶颈双规则:漏斗(入度≥2 出度≤1,金边)+ 枢纽(入度≥2 出度≥2,酒红边),JS 自动判。
-   • 情景基准率引用自己的向前跟踪实测分布(见 数据备注 区),不再拍脑袋。
-   • 价格/动量必须来自 price.py 实测,不得臆测。配色语义:green=早期/候选, amber=观望, red=抛物线/排除。
-  ============================================================================
--->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{主题}} · 供应链瓶颈分析 | Serenity 框架</title>
+<title>Serenity v0.2 · 可复现历史演示</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..900;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@500;700;900&display=swap" rel="stylesheet">
@@ -269,278 +246,23 @@
   }
   .rv{opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease} .rv.in{opacity:1; transform:none}
 </style>
+<link rel="icon" href="data:,">
+<script type="application/json" id="serenity-report-meta">{"schema_version": 1, "report_date": "2026-06-02", "theme": "工具离线演示", "price_asof": "2026-06-01", "demo": true}</script>
 </head>
 <body>
-
-<!-- ============ 页眉 + 一句话结论 (Step 1 头) ============ -->
-<header class="hero"><div class="wrap">
-  <div class="kicker">Serenity 供应链瓶颈逆向映射</div>
-  <h1>{{主题大标题}}<br><em>{{副标题/钩子}}</em></h1>
-  <p class="sub">{{一句话定位:这份报告扫什么、结论方向}}</p>
-  <div class="meta-row">
-    <span><b>数据截止</b> {{YYYY-MM-DD}} 收盘</span>
-    <span><b>报告日</b> {{YYYY-MM-DD}}</span>
-    <span><b>价格源</b> {{EODHD / yfinance}}</span>
-    <span><b>类别</b> {{Bottleneck/Disruption/Evolution}}</span>
-    <span><b>免责</b> 仅研究教育 · 非投资建议</span>
-  </div>
-</div></header>
-<div class="wrap"><div class="verdict rv">
-  <div class="tag">◆ 一句话结论</div>
-  <p>{{最重要的判断,带 <strong>关键词高亮</strong>:瓶颈在哪、有没有干净纯 play、谁是 🟢 唯一可入场}}</p>
-</div></div>
-
-<!-- ============ Step 1 · 资本开支确定性 ============ -->
-<section><div class="wrap rv">
-  <div class="eyebrow">Step 1 · 资本开支确定性</div>
-  <h2><span class="num">01</span>{{钱一定会花吗?}}</h2>
-  <p class="lead">{{需求确定性 + 需求来源(政府/商业)+ 节奏含义}}</p>
-  <div class="stats">
-    <!-- FILL: 3-4 个关键数字。big=数字, span=单位/符号, lab=说明 -->
-    <div class="stat"><div class="big">{{数字}}<span>{{单位}}</span></div><div class="lab">{{说明}}</div></div>
-    <div class="stat"><div class="big">{{数字}}<span>{{单位}}</span></div><div class="lab">{{说明}}</div></div>
-    <div class="stat"><div class="big">{{数字}}<span>{{单位}}</span></div><div class="lab">{{说明}}</div></div>
-  </div>
-</div></section>
-
-<!-- ============ 核心发现 callout ============ -->
-<section><div class="wrap rv"><div class="callout">
-  <span class="pill">⚠ 核心发现</span>
-  <h3>{{最该被先看到的那句话}}</h3>
-  <p>{{瓶颈落在哪层、有无干净纯 play、暴露路径}}</p>
-</div></div></section>
-
-<!-- ============ 30 秒看懂这个主题(Level 2,术语友好度纪律)============ -->
-<!--
-  FILL · 150-220 字大白话,对完全不熟主题的读者解释:
-    1. 这个主题在解决什么问题
-    2. 关键瓶颈在哪一层
-    3. 为什么"突然"成为主题(催化剂)
-  风格示例(800VDC):
-    "AI 服务器机柜的功率从 30kW 升到 1MW,传统 48V 直流配电会让铜缆粗到没法装。
-     NVIDIA 提出 800V 高压直流方案,但 SiC 功率半导体(替代传统硅 IGBT)是关键瓶颈。
-     美国独家高产能 SiC 代工只有 XFAB 一家,叠加 EU/US 政策背书,这是 2026 H1 最确定的硬瓶颈主题。"
--->
-<section style="padding-top:30px"><div class="wrap rv">
-  <div class="thirty-sec">
-    <div class="label">30 秒看懂这个主题</div>
-    <h3>{{一句话主题定义}}</h3>
-    <p>{{大白话解释 — 这个主题解决什么问题、关键瓶颈在哪、为什么此刻成为主题。150-220 字。}}</p>
-  </div>
-</div></section>
-
-<!-- ============ Step 2 · 逆向拆链(5 层 · 网状视图)============ -->
-<!--
-  填法(每只标的一个 .cnode,每条供货关系一个 <span data-from data-to data-weight>):
-
-  1) 节点 (.cnode):
-     - data-id = forward_picks 里的 eodhd_symbol(美股带 .US,例 AEHR.US)
-     - <b>{{代码}}</b> + <small>{{瓶颈一句话}}</small>
-     - stage class: s-early / s-ext / s-range / s-seed(对应 price.py 的 stage)
-     - 跨主题节点加 <span class="star-inline">⭐</span> 或 ⭐⭐
-     - is-bottleneck 由 JS 根据入度/出度自动加,**不要手动写**
-
-  2) 供货关系 (.edge-list 里的 span):
-     - data-from = 供货方(上游)的 id;data-to = 客户方(下游)的 id
-     - data-weight:0.6=粗/主依赖(>50%) / 0.3=中(20-50%) / 0.1=细(<20%)
-
-  3) 5 层固定顺序:上游材料/代工 → 上游设备 → 中游器件 → 中游系统 → 下游(灰、跳过)
-     某层无标的时,留空 <div class="layer-nodes"></div>
-
-  ※ 边方向 = 物流方向(上游 → 下游)。
-  ※ 入度高+出度低=自动判定瓶颈点,金色描边。
--->
-<section><div class="wrap rv">
-  <div class="eyebrow">Step 2 · 逆向拆链</div>
-  <h2><span class="num">02</span>产业链 5 层 — 网状视图</h2>
-  <p class="lead">节点颜色 = stage(绿=早期上行 / 红=已抛物线 / 琥珀=横盘 / 灰=种子或下游);<b style="color:#b8902e">金色描边</b> = 漏斗瓶颈(多家依赖它、它只供少数客户);<b style="color:#7a2e3a">酒红描边</b> = 枢纽瓶颈(多对多,上游多家供它、下游多线靠它,最难绕开);<b style="color:#b8902e">⭐</b> = 跨主题节点(见报告底部)。边粗细 = 依赖度(粗 &gt;50% / 中 20-50% / 细 &lt;20%)。</p>
-  <div class="chain-viz">
-    <svg class="chain-edges" xmlns="http://www.w3.org/2000/svg"></svg>
-
-    <div class="chain-layer" data-layer="upstream-material">
-      <div class="layer-label">上游材料 / 代工<small>原型 ①②</small></div>
-      <div class="layer-nodes">
-        <!-- FILL · 示例(替换/补齐):
-        <div class="cnode s-early" data-id="STM.US"><b>STM</b><small>SiC 综合 #1</small></div>
-        <div class="cnode s-ext" data-id="XFAB.PA"><b>XFAB</b><small>美国独家高产能 SiC 代工</small></div>
-        -->
-      </div>
-    </div>
-
-    <div class="chain-layer" data-layer="upstream-equipment">
-      <div class="layer-label">上游设备<small>原型 ⑥</small></div>
-      <div class="layer-nodes">
-        <!-- FILL · 示例:
-        <div class="cnode s-ext" data-id="AEHR.US"><b>AEHR</b><small>SiC burn-in 测试</small><span class="star-inline">⭐</span></div>
-        -->
-      </div>
-    </div>
-
-    <div class="chain-layer" data-layer="midstream-device">
-      <div class="layer-label">中游器件<small>原型 ④⑧</small></div>
-      <div class="layer-nodes">
-        <!-- FILL -->
-      </div>
-    </div>
-
-    <div class="chain-layer" data-layer="midstream-system">
-      <div class="layer-label">中游系统<small>原型 ④</small></div>
-      <div class="layer-nodes">
-        <!-- FILL -->
-      </div>
-    </div>
-
-    <div class="chain-layer chain-layer-down" data-layer="downstream">
-      <div class="layer-label">下游 · 跳过<small>不是猎物</small></div>
-      <div class="layer-nodes">
-        <!-- FILL -->
-      </div>
-    </div>
-
-    <!-- 边列表(JS 读取并在 .chain-edges SVG 上自动绘制) -->
-    <div class="edge-list" hidden>
-      <!-- FILL · 每条 (上游 → 下游) 供货关系一行,data-weight 三档:
-      <span data-from="XFAB.PA" data-to="POWI.US" data-weight="0.6"></span>  主依赖
-      <span data-from="STM.US"  data-to="POWI.US" data-weight="0.3"></span>  中依赖
-      <span data-from="ON.US"   data-to="POWI.US" data-weight="0.1"></span>  弱依赖
-      -->
-    </div>
-
-    <div class="chain-legend">
-      <div class="item"><span class="swatch sw-thick"></span> 主依赖 &gt;50%</div>
-      <div class="item"><span class="swatch sw-mid"></span> 中等 20-50%</div>
-      <div class="item"><span class="swatch sw-thin"></span> 弱 &lt;20%</div>
-      <div class="item"><span class="sw-bn swatch"></span> 漏斗瓶颈(入度≥2 出度≤1)</div>
-      <div class="item"><span class="swatch sw-bn" style="box-shadow:0 0 0 2px var(--burg)"></span> 枢纽瓶颈(入度≥2 出度≥2)</div>
-      <div class="item"><span class="swatch sw-star">⭐</span> 跨主题节点</div>
-    </div>
-  </div>
-
-  <p class="note" style="margin-top:14px"><b>怎么读这张图:</b>沿物流方向"从上往下"读 — 上游供货给中游、中游卖给下游。<b style="color:#b8902e">金色描边节点</b>就是 Step 5"真瓶颈"闸门的物理实体(多家依赖它,它只供少数客户 = 卡脖子);<b>⭐</b> 节点跨多个 capex cycle,产能压力非线性叠加。</p>
-</div></section>
-
-<!-- ============ Step 4-6 · 候选 leaderboard(核心区) ============ -->
-<section><div class="wrap rv">
-  <div class="eyebrow">Step 4–6 · 候选 + 价格实测 + 模式 A 择时</div>
-  <h2><span class="num">03</span>候选名单 — 按"还能不能进"排序</h2>
-
-  <!-- ============ 头条位(2026-06-13 加):本次行动点,无视 stage 排序置顶 ============
-       规则:最多 2 张卡。"行动点"= 读者本次唯一需要立即做的事(设警报/可入场/必须避开),
-       不是"最好的公司"。其余标的照旧按 stage 排序进 leaderboard。 -->
-  <div class="top-picks">
-    <div class="tp-label">⚑ 本次行动点 — 先看这 {{1-2}} 个</div>
-    <div class="tp-grid">
-      <div class="tp-card">
-        <div class="tp-k">{{ACTION 类型,如 Mode B 背离警报 / 唯一可入场}}</div>
-        <div class="tp-t">{{代码 · 名称}}</div>
-        <div class="tp-d">{{为什么是本次头条,1-2 句}}</div>
-        <div class="tp-act">→ {{具体动作:设什么警报 / 什么条件做什么}}</div>
-      </div>
-    </div>
-  </div>
-
-  <p class="lead">标尺 = 现价在 <b>6 个月最低↔最高</b> 之间的水位(游标点位置)—— 标尺两端标 6 个月最低/最高价、游标上方标现价;颜色 = stage(绿=早期上行可入场 / 红=已抛物线别追 / 琥珀=横盘或深跌)。水位词:贴顶(≥90%)/ 高位 / 中位 / 低位 / 贴底(<10%)。价格为 <code style="font-family:var(--mono);font-size:13px">price.py</code> 实测。</p>
-  <div class="board">
-    <div class="row head"><span>代码 / 现价</span><span>是什么 · 判定 · trigger</span><span>6月水位 · 动量</span><span style="text-align:right">stage</span></div>
-
-    <!-- ===== 候选行示例:复制此块,按 stage 从 early→extended 排序(头条卡里的标的也照常出现在这里) =====
-      密度纪律(2026-06-13):行内只留决策三要素(判定 badge / trigger / stage)+ 一句话是什么;
-        原型#、基本面要点、目标价情景、💡人话、风险 → 全部收进 <details class="more">。
-      trigger 分层:class="trig auto"(纯价格条件,用户自己的工具核对)/ class="trig manual"(基本面/事件条件,需人工)。
-      行内闸门小标:gates-mini 三档 ok/mid/no,对应 Step5 三道闸在【这只标的】上的打分(主题级总评仍在 Step5 区)。
-      判定史(若 forward_picks.csv 有同 symbol 旧判定,必带):.hist 一行
-        「判定史:MM-DD 🟡观察 @$XX → 今 $YY(±Z%)· 判定验证 ✓/✗」;价格变动按 (今价/旧entry-1) 计算,勿凭印象。
-      可选联动:仅在明确配置自己的 cockpit_url 时加 <a class="ck" href="http://localhost:5173/chart/{{SYM.US}}" title="在 Cockpit 看实时 K线+判定史">📈</a>(默认生成不添加本地面板链接)。
-      字段更名(2026-06-13):旧"估值/增长"→"基本面要点"(EODHD 无 fundamentals,网页研究只填查得到的:backlog/增速/盈利状态,不硬凑 P/E)。 -->
-    <div class="row">
-      <div class="tk">{{代码}}<a class="ck" href="http://localhost:5173/chart/{{SYM.US}}" title="在 Cockpit 看实时 K线+判定史">📈</a><span class="px">{{$现价}}</span></div>
-      <div class="nmcell">
-        <div class="t">{{名称 · 档位}}<span class="star" title="跨 2 主题:光子学 + 800VDC(示范)">⭐</span></div>
-        <div class="d">{{一句话:它卡住链条的哪个环节}}</div>
-        <span class="badge b-green">🟢 {{判定标签}}</span><span class="trig auto">trigger:{{可量化条件}}</span>
-        <div class="gates-mini"><span class="ok">🔒 真瓶颈 过</span><span class="mid">👁 前机构 半过</span><span class="no">💰 便宜 不过</span></div>
-        <details class="more"><summary>详情:原型 / 基本面要点 / 情景 / 风险</summary>
-          <p>💡 {{人话:为什么这家公司重要,给完全不懂的人}}</p>
-          <p><b>原型</b> {{①②…}} · <b>基本面要点</b> {{backlog/营收增速/盈利状态等查得到的}} · <b>情景</b> {{时间框 ±X%(非承诺)}} · <b>风险</b> {{1-2 条}}</p>
-        </details>
-        <div class="hist">判定史:{{MM-DD}} {{🟡观察}} @{{$旧价}} → 今 {{$现价}}(<span class="v-ok">{{±Z%}}</span>)· {{判定到目前为止 对/错 一句话}}</div>
-      </div>
-      <div class="mo s-early">
-        <div class="ends"><span>6月低 <b>{{$低}}</b></span><span><b>{{$高}}</b> 6月高</span></div>
-        <div class="gauge"><div class="track"></div><div class="dot" style="left:{{range_pos}}%"></div><span class="cur" style="left:{{range_pos_钳10_90}}%">{{$现价}}</span></div>
-        <div class="lbl"><span class="word">{{贴顶/高位/中位/低位/贴底}}</span> · 距高点 <b>{{off%}}</b><br>近1月 <b>{{+x%}}</b> · 近3月 <b>{{+x%}}</b></div>
-      </div>
-      <div class="stage-t early">EARLY-UPTREND<small>{{备注}}</small></div>
-    </div>
-    <!-- stage=extended/parabolic → mo.s-ext + stage-t.ext + badge b-amber/b-red;🟡 必须配 trigger -->
-    <!-- stage=range/basing → mo.s-range + stage-t.range -->
-    <!-- 下游对照组:不占独立行,合并为一行说明(代码列写"下游对照",nmcell 列出全部跳过标的+理由) -->
-
-  </div>
-  <p class="note" style="margin-top:18px"><b>怎么读这张表:</b>{{模式 A 提示:绿色=还能埋伏,红/琥珀=已抛物线应等回调标 🟡}};<b>⭐ = 跨主题节点</b>(被多个 capex cycle 同时驱动,前机构闸门自动加分);<b>⚙ trigger</b> 会被 用户自己的工具核对,<b>👁 trigger</b> 需人工跟踪。</p>
-
-  <!-- ============ 跨主题信号区块(Serenity ⑤跨 capex cycle 原型)============ -->
-  <!-- 数据来自 tracking/cross_theme_index_snapshot.csv,LLM 把当前报告主题相关的 ⭐ 节点列在这里 -->
-  <div class="cross-theme-section">
-    <h3>⭐ 跨主题信号 — 同时服务多个 capex cycle</h3>
-    <p class="lead">这些标的 <b>同时出现在本主题与其他已分析主题</b>,产能压力是叠加的、定价权非线性。详见 <code style="font-family:var(--mono);font-size:13px">tracking/cross_theme_index_snapshot.csv</code>。</p>
-    <!-- 每个跨主题节点一行;LLM 从 snapshot.csv 取该主题相关的 ⭐ 行填入 -->
-    <div class="cross-row">
-      <span class="sym">{{symbol}}</span>
-      <span class="themes">同时是 <em>{{theme_A}}</em> 的{{档位说明 A}}、也是 <em>{{theme_B}}</em> 的{{档位说明 B}}。{{两个主题的状态 — 🔥active / 🌡️mature / ❄️cooled}}</span>
-      <span class="stars-cell">{{⭐ 或 ⭐⭐}}</span>
-    </div>
-    <!-- 若本主题无跨主题节点,显示:"本主题候选当前无跨主题节点(forward_picks 覆盖范围内)。" -->
-  </div>
-</div></section>
-
-<!-- ============ Step 5 · 三道闸门 ============ -->
-<section><div class="wrap rv">
-  <div class="eyebrow">Step 5 · 三道闸门</div>
-  <h2><span class="num">04</span>过关吗?(诚实打分)</h2>
-  <!-- gate class: g-ok(过) / g-mid(半过) / g-no(不过);score 文案对应 -->
-  <div class="gates">
-    <div class="gate g-ok"><div class="ic">🔒</div><div class="h">真瓶颈</div><div class="score">{{过/半过/不过}}</div><p>{{说明}}</p></div>
-    <div class="gate g-mid"><div class="ic">👁️</div><div class="h">前机构</div><div class="score">{{过/半过/不过}}</div><p>{{说明}}</p></div>
-    <div class="gate g-no"><div class="ic">💰</div><div class="h">便宜+已去风险</div><div class="score">{{过/半过/不过}}</div><p>{{说明}}</p></div>
-  </div>
-  <p style="margin-top:20px"><b>综合:</b>{{三关总结 → 是否本框架理想猎场}}</p>
-</div></section>
-
-<!-- ============ Step 7 · 落地结论 ============ -->
-<section><div class="wrap rv">
-  <div class="eyebrow">Step 7 · 落地结论</div>
-  <h2><span class="num">05</span>给投资者的几条</h2>
-  <div class="takeaways">
-    <div class="ta"><div class="x"><b>{{结论标题}}</b> <span>{{展开}}</span></div></div>
-    <!-- FILL: 3-5 条 -->
-  </div>
-</div></section>
-
-<!-- ============ 数据备注 ============ -->
-<section><div class="wrap rv"><div class="note">
-  <b>数据可用性 & 方法备注:</b> 价格/动量为 <code>price.py</code> 实测;基本面/市占率为网页研究近似值,<b>需以财报/IR 复核</b>。EODHD 本套餐不含 fundamentals/财报日历,亦不含东京交易所(日股走 yfinance <code>.T</code> 回退)。stage 由启发式给出,仅供模式 A 择时参考,非买卖信号。
-  <br><b>情景基准率(2026-06-13 起强制):</b>目标价情景引用自己的向前跟踪<b>实测分布</b>(使用 <code>tracking/score_tracker.py</code>，保留日期与样本量；公库旧评分只作历史演示),格式:「本框架全体 🟢 实测:均α {{+X%}} / 中位α {{X%}} / 胜率 {{X%}}(n={{N}},截至 {{日期}})」——均值常被个别大赢家拉高,<b>中位数才是诚实预期</b>;新主题无同类历史时显式说明"无基准,情景为推断"。
-</div></div></section>
-
-<!-- ============ 术语速查表(默认折叠,JS 自动从所有 <abbr> 抽取)============ -->
-<section style="padding-top:0"><div class="wrap rv">
-  <details class="glossary-section">
-    <summary>📚 本报告术语速查表(点击展开)</summary>
-    <p class="gloss-note">来源 <code style="font-family:var(--mono);font-size:12.5px">reference/glossary.md</code> · 由 JS 自动从本报告所有 <code>&lt;abbr title&gt;</code> 抽取,无需手动维护。</p>
-    <div class="glossary-list"></div>
-  </details>
-</div></section>
-
-<!-- ============ 免责页脚(必带) ============ -->
-<footer><div class="wrap">
-  <p class="disc"><b style="color:#f4efe5">⚠ 免责声明</b> &nbsp;本报告由 serenity-bottleneck-hunter 框架生成,<b>仅供研究与教育用途,非投资建议(Not Financial Advice)</b>。估值/市占率为网页研究近似值,务必复核;微盘/海外/ADR 标的有流动性、汇率与政策风险;本框架"业绩"含选股循环论证与幸存者偏差,不可外推为收益预期。投资有风险,决策需自负。</p>
-  <div class="srcs"><span>来源 ↓</span>
-    <a href="{{url}}">{{来源名}}</a>
-    <!-- FILL: 列出本次研究引用的链接 -->
-  </div>
-</div></footer>
-
+<header class="hero"><div class="wrap"><h1>Serenity v0.2 · 可复现历史演示</h1><p class="note"><b>历史演示 · 仅用于验证工具和报告结构，不代表当前行情或投资判断。</b></p>
+<p class="sub">公开归档样本 · 行情截至 2026-06-01 · 仅演示生成与校验流程</p></div></header>
+<section><div class="wrap rv"><div class="tag">◆ 一句话结论</div><p><b>本文件是一份工具演示，不是一份当前投资结论。</b>使用公库原已公开的两条历史快照，展示数据如何进入报告、如何核对数字和如何保留日期。未重新取价，也未复核历史行情。</p></div></section>
+<section><div class="wrap rv"><div class="tag">Step 1 · 资本开支确定性</div><div class="callout"><b>样本</b> 2 家公司 &nbsp;·&nbsp; <b>行情日期</b> 2026-06-01 &nbsp;·&nbsp; <b>网络请求</b> 0 次</div><p class="note">真实研究需要另行验证资本开支、付款方和兑现周期。本演示不声称完成主题研究或资本开支证明。</p></div></section>
+<section><div class="wrap rv"><div class="tag">30 秒看懂</div><p>先读 <abbr title="供应链中难替代且限制扩张的环节">瓶颈</abbr>，再核对公司、数据和证伪条件。此处只展示工作流，不能从演示标识推导买入或卖出。</p></div></section>
+<section><div class="wrap rv"><div class="tag">Step 2 · 产业链网状图(瓶颈双规则自动判定)</div><p>以下依赖边仅用于展示交互组件，不声称实际供应商、客户或商业合作关系。报告需另外为真实关系提供证据。</p><div class="chain-viz"><svg class="chain-edges" xmlns="http://www.w3.org/2000/svg"></svg><div class="chain-layer" data-layer="demand"><div class="layer-label">需求场景<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="DEMAND" data-desc="示例场景" data-status=""><b>需求</b><small>示例场景</small></div></div></div><div class="chain-layer" data-layer="system"><div class="layer-label">系统层<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="SYSTEM" data-desc="示例系统" data-status=""><b>系统</b><small>示例系统</small></div></div></div><div class="chain-layer" data-layer="component"><div class="layer-label">工具层<small>公开历史样本</small></div><div class="layer-nodes"><div class="cnode s-ext" data-id="DDOG.US" data-desc="Datadog——历史数据演示" data-status="水位99 · 近1月+98% · 近3月+148% [2026-06-01]"><b>Datadog</b><small>历史数据演示</small></div><div class="cnode s-ext" data-id="NET.US" data-desc="Cloudflare——历史数据演示" data-status="水位100 · 近1月+24% · 近3月+51% [2026-06-01]"><b>Cloudflare</b><small>历史数据演示</small></div></div></div><div class="chain-layer" data-layer="equipment"><div class="layer-label">设备层<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="EQUIPMENT" data-desc="示例设备" data-status=""><b>设备</b><small>示例设备</small></div></div></div><div class="chain-layer" data-layer="material"><div class="layer-label">材料层<small>结构演示</small></div><div class="layer-nodes"><div class="cnode s-early" data-id="MATERIAL" data-desc="示例材料" data-status=""><b>材料</b><small>示例材料</small></div></div></div><div class="edge-list" hidden><span data-from="DEMAND" data-to="SYSTEM" data-weight="1"></span><span data-from="SYSTEM" data-to="DDOG.US" data-weight="1"></span><span data-from="SYSTEM" data-to="NET.US" data-weight="1"></span><span data-from="DDOG.US" data-to="EQUIPMENT" data-weight="1"></span><span data-from="NET.US" data-to="EQUIPMENT" data-weight="1"></span><span data-from="EQUIPMENT" data-to="MATERIAL" data-weight="1"></span></div></div><p class="note">点击节点查看历史快照；连线与漏斗标记展示组件能力，不代表已确认的产业链关系。</p></div></section>
+<section><div class="wrap rv"><div class="top-picks"><div class="tp-label">⚑ 本次行动点</div><div class="tp-grid"><div class="tp-card"><div class="tp-k">01</div><div class="tp-t">检查输入</div><div class="tp-d">查看历史日期与来源说明。</div><div class="tp-act">这是数据验收步骤</div></div><div class="tp-card"><div class="tp-k">02</div><div class="tp-t">核对输出</div><div class="tp-d">运行严格校验，检查报告与 scan 一致。</div><div class="tp-act">这不是交易指令</div></div></div></div></div></section>
+<section><div class="wrap rv"><div class="tag">Step 4–6 · 候选 leaderboard</div><p>下面两行使用历史公开快照；黄色标识仅展示报告样式，不作当前评级。</p><div class="board"><div class="row head"><span>代码 / 现价</span><span>是什么 · 判定</span><span>6月水位 · 动量</span><span style="text-align:right">stage</span></div><div class="row"><div class="tk" data-ticker="DDOG.US">DDOG<span class="px">$277.49</span></div><div class="nmcell"><div class="t">Datadog · 历史演示</div><div class="d">仅供工具验收；公司身份来自公库历史真值表。</div><span class="badge b-amber">🟡 历史样本</span><div class="gates-mini"><span class="mid">🔒 真瓶颈 未评估</span><span class="no">👁 前机构 未评估</span><span class="mid">💰 便宜 未评估</span></div><details class="more"><summary>详情:原型 / 论点</summary><p><b>原型</b> ④ · <b>论点</b> 本例只验证输入输出的一致性，不形成投资论点。</p></details><details style="margin-top:8px"><summary style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;color:#b3261e">§A 反向研究/红队 <span style="background:#7a2e3a;color:#fff;padding:1px 5px;border-radius:3px">Tier-1</span></summary><div style="background:#f7e6e3;border:1px solid #e0a89f;border-radius:6px;padding:9px 11px;margin:6px 0 0;font-size:12px;line-height:1.5;color:#5a2420">数据可能过期，历史快照不等于当前价格；实际研究须独立核对公司、行业与估值。<br><b style="color:#b3261e">最大杀点:把历史数据误当当前数据，会使任何结论失去依据。</b></div></details></div><div class="mo s-ext"><div class="ends"><span>6月低 <b>$98.01</b></span><span><b>$278.70</b> 6月高</span></div><div class="gauge"><div class="track"></div><div class="dot" style="left:99%"></div><span class="cur" style="left:90%">$277.49</span></div><div class="lbl"><span class="word">贴顶</span> · 距高点 <b>-0.4%</b><br>近1月 <b>+97.5%</b> · 近3月 <b>+148.3%</b><br><span style="font-size:10px;color:var(--faint)">第二轴 · fwdP/E — · PEG — · 增速— → <b style="color:var(--muted)">高位待判</b></span></div></div><div class="stage-t ext">EXTENDED<small>已抛物线</small></div></div>
+<div class="row"><div class="tk" data-ticker="NET.US">NET<span class="px">$270.82</span></div><div class="nmcell"><div class="t">Cloudflare · 历史演示</div><div class="d">仅供工具验收；公司身份来自公库历史真值表。</div><span class="badge b-amber">🟡 历史样本</span><div class="gates-mini"><span class="mid">🔒 真瓶颈 未评估</span><span class="no">👁 前机构 未评估</span><span class="mid">💰 便宜 未评估</span></div><details class="more"><summary>详情:原型 / 论点</summary><p><b>原型</b> ④ · <b>论点</b> 本例只验证输入输出的一致性，不形成投资论点。</p></details><details style="margin-top:8px"><summary style="cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:700;color:#b3261e">§A 反向研究/红队 <span style="background:#7a2e3a;color:#fff;padding:1px 5px;border-radius:3px">Tier-1</span></summary><div style="background:#f7e6e3;border:1px solid #e0a89f;border-radius:6px;padding:9px 11px;margin:6px 0 0;font-size:12px;line-height:1.5;color:#5a2420">数据可能过期，历史快照不等于当前价格；实际研究须独立核对公司、行业与估值。<br><b style="color:#b3261e">最大杀点:把历史数据误当当前数据，会使任何结论失去依据。</b></div></details></div><div class="mo s-ext"><div class="ends"><span>6月低 <b>$158.83</b></span><span><b>$271.09</b> 6月高</span></div><div class="gauge"><div class="track"></div><div class="dot" style="left:100%"></div><span class="cur" style="left:90%">$270.82</span></div><div class="lbl"><span class="word">贴顶</span> · 距高点 <b>-0.1%</b><br>近1月 <b>+24.5%</b> · 近3月 <b>+51.4%</b><br><span style="font-size:10px;color:var(--faint)">第二轴 · fwdP/E — · PEG — · 增速— → <b style="color:var(--muted)">高位待判</b></span></div></div><div class="stage-t ext">EXTENDED<small>已抛物线</small></div></div></div></div></section>
+<section><div class="wrap rv"><div class="tag">Step 5 · 三道闸门</div><p>真瓶颈、前机构、便宜去风险三道闸门均需要真实研究证据；本示例只演示区块，不宣称已过研究闸门。</p></div></section>
+<section><div class="wrap rv"><div class="tag">⭐ 跨主题信号</div><p>跨主题星级应由自己的跟踪记录重新计算。本示例没有独立跨主题研究结论。</p></div></section>
+<section><div class="wrap rv"><div class="tag">Step 7 · 落地结论</div><p>落地结论：完成离线工具验收后，再开始真实主题研究。无仓位建议、无当前目标价。</p></div></section>
+<footer><div class="wrap"><p class="note">数据备注：demo_scan.json 摘自公库 tracking/_scan_AIAgent_v1.json；原 provider 为 eodhd，日期 2026-06-01。</p><p class="note">本例未调用 price.py 获取实时行情；不把历史原始口径示例用于证明新版复权正确。</p><p class="note">输入与输出均保留在独立演示文件中；正式 tracking/forward_picks.csv 不会被改写。</p><details class="glossary-section"><summary>术语速查</summary><div class="glossary-list"></div></details><p class="note disc">仅研究教育与软件演示，非投资建议。历史数据与演示关系均不可用于交易判断。</p></div></footer>
 <script>
   /* 滚入动画 */
   const obs=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}})},{threshold:.12});

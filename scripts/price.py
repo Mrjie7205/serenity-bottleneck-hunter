@@ -16,9 +16,85 @@ CLI:
 可作为模块导入:
     from price import analyze, fetch_history
 """
-import json, os, sys, urllib.request, datetime
+import json, os, sys, urllib.request, datetime, math
+
+
+def _finite(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _clean(rows):
+    """Validate provider bars; never infer corporate actions from a price jump."""
+    if not isinstance(rows, list):
+        return None
+    by_date = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if not all(_finite(row.get(k)) and row[k] > 0 for k in ("open", "high", "low", "close")):
+            continue
+        try:
+            date = datetime.date.fromisoformat(row["date"]).isoformat()
+        except (KeyError, TypeError, ValueError):
+            continue
+        if row["high"] < max(row["open"], row["close"], row["low"]) or row["low"] > min(row["open"], row["close"]):
+            continue
+        bar = {"date": date, **{k: row[k] for k in ("open", "high", "low", "close")}}
+        if date in by_date and by_date[date] != bar:
+            return None
+        by_date[date] = bar
+    return [by_date[d] for d in sorted(by_date)] or None
+
+
+_ASHARE_SUFFIXES = (".SHG", ".SHE", ".SS", ".SZ", ".SH", ".BJ")
+
+
+def _yfinance_symbol(symbol):
+    symbol = symbol.strip().upper()
+    for source, target in ((".US", ""), (".SHG", ".SS"), (".SH", ".SS"), (".SHE", ".SZ")):
+        if symbol.endswith(source):
+            return symbol[:-len(source)] + target
+    return symbol
+
+
+def _fetch_akshare_qfq(symbol, days=400):
+    try:
+        import akshare as ak
+        end = datetime.date.today()
+        df = ak.stock_zh_a_hist(symbol=symbol.split(".")[0], period="daily",
+            start_date=(end - datetime.timedelta(days=days)).strftime("%Y%m%d"),
+            end_date=end.strftime("%Y%m%d"), adjust="qfq", timeout=20)
+        if df is None or df.empty:
+            return None
+        return [{"date": str(r["日期"]), "open": float(r["开盘"]), "high": float(r["最高"]),
+                 "low": float(r["最低"]), "close": float(r["收盘"])} for _, r in df.iterrows()]
+    except Exception:
+        return None
+
+
+def _adjust_eodhd(rows):
+    """Scale OHLC only by the provider's explicit adjusted_close / close factor."""
+    if not isinstance(rows, list) or not rows:
+        return None
+    out = []
+    for row in rows:
+        if not isinstance(row, dict) or not all(_finite(row.get(k)) and row[k] > 0
+                for k in ("open", "high", "low", "close", "adjusted_close")):
+            return None  # Do not mix raw and adjusted bars within one series.
+        factor = row["adjusted_close"] / row["close"]
+        out.append({"date": row.get("date"), **{k: row[k] * factor for k in ("open", "high", "low")},
+                    "close": row["adjusted_close"]})
+    return _clean(out)
 
 EODHD_KEY = os.environ.get("EODHD_API_KEY", "").strip()
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+    EODHD_KEY = os.environ.get("EODHD_API_KEY", "").strip()
+except ImportError:
+    pass
+if EODHD_KEY == "your_eodhd_key_here":
+    EODHD_KEY = ""
 
 
 def _fetch_eodhd(symbol, days=400):
@@ -30,8 +106,7 @@ def _fetch_eodhd(symbol, days=400):
             with urllib.request.urlopen(url, timeout=40) as r:
                 d = json.load(r)
                 if isinstance(d, list) and d:
-                    return [{"date": x["date"], "open": x["open"], "high": x["high"],
-                             "low": x["low"], "close": x["close"]} for x in d]
+                    return _adjust_eodhd(d)
         except Exception:
             pass
     return None
@@ -43,8 +118,10 @@ def _fetch_yf(symbol, days=400):
     except ImportError:
         return None
     try:
-        t = yf.Ticker(symbol)
-        h = t.history(period=f"{max(days, 400)}d", auto_adjust=False)
+        t = yf.Ticker(_yfinance_symbol(symbol))
+        end = datetime.date.today() + datetime.timedelta(days=1)
+        h = t.history(start=(end - datetime.timedelta(days=max(days, 400))).isoformat(),
+                      end=end.isoformat(), auto_adjust=True, repair=False, timeout=20)
         if h is None or len(h) == 0:
             return None
         return [{"date": idx.strftime("%Y-%m-%d"),
@@ -56,14 +133,26 @@ def _fetch_yf(symbol, days=400):
 
 
 def fetch_history(symbol, days=400):
-    """按 EODHD → yfinance 顺序抓;返回 (data, provider) 或 (None, None)。"""
-    if EODHD_KEY:
-        data = _fetch_eodhd(symbol, days)
+    """A股:akshare qfq→Yahoo→EODHD；其他:EODHD→Yahoo。只接收源提供的复权。"""
+    symbol = symbol.strip().upper()
+    is_a = symbol.endswith(_ASHARE_SUFFIXES)
+    if is_a:
+        data = _clean(_fetch_akshare_qfq(symbol, days))
         if data:
-            return data, "eodhd"
-    data = _fetch_yf(symbol, days)
+            return data, "akshare-qfq"
+        if not symbol.endswith(".BJ"):
+            data = _clean(_fetch_yf(_yfinance_symbol(symbol), days))
+            if data:
+                return data, "yfinance-qfq"
+    if EODHD_KEY:
+        data = _clean(_fetch_eodhd(symbol, days))
+        if data:
+            return data, "eodhd-adj"
+    if is_a:
+        return None, None
+    data = _clean(_fetch_yf(_yfinance_symbol(symbol), days))
     if data:
-        return data, "yfinance"
+        return data, "yfinance-adj"
     return None, None
 
 
@@ -71,7 +160,7 @@ def analyze(symbol, days=400):
     data, prov = fetch_history(symbol, days)
     if data is None:
         return {"ticker": symbol,
-                "error": "no data from EODHD or yfinance (海外股请设 EODHD_API_KEY,或校验代码/交易所后缀)"}
+                "error": "no usable adjusted data (check dependencies, network/certificates, provider coverage and exchange suffix)"}
     closes = [x["close"] for x in data]
     last = closes[-1]
     last_date = data[-1]["date"]
@@ -106,6 +195,12 @@ def analyze(symbol, days=400):
         "ret_3m_pct": r3m,
         "above_sma50": up,
         "stage": stage,
+        "high_6mo": round(hi6, 4),
+        "low_6mo": round(lo6, 4),
+        "observations": len(data),
+        "quality_warnings": (["少于126个交易日，6月区间样本不完整"] if len(data) < 126 else [])
+            + (["A股首选复权源不可用，EODHD复权结果需独立核对"]
+               if symbol.upper().endswith(_ASHARE_SUFFIXES) and prov == "eodhd-adj" else []),
     }
 
 
@@ -132,7 +227,8 @@ def _ak_valuation(code, last=None):
         pass
     try:  # ② forward = 现价 ÷ 次年券商一致预期 EPS(真 forward,非 yfinance 乐观值)
         fc = _ak_forecast(); row = fc[fc["代码"] == code]
-        col = next((c for c in fc.columns if "2026" in str(c) and "每股收益" in str(c)), None)
+        forecast_year = datetime.date.today().year + 1
+        col = next((c for c in fc.columns if str(forecast_year) in str(c) and "每股收益" in str(c)), None)
         if not row.empty and col and last:
             eps = float(row[col].iloc[0])
             if eps > 0:
@@ -141,7 +237,7 @@ def _ak_valuation(code, last=None):
         pass
     try:  # ③ 增速:财务摘要 归母净利润 / 营业总收入 最新 vs 4 季前 YoY
         fa = ak.stock_financial_abstract(symbol=code)
-        dc = [c for c in fa.columns if str(c).isdigit() and len(str(c)) == 8]
+        dc = sorted([c for c in fa.columns if str(c).isdigit() and len(str(c)) == 8], reverse=True)
         def yoy(metric):
             r = fa[fa["指标"].astype(str) == metric]
             if r.empty or len(dc) < 5:
@@ -157,9 +253,13 @@ def _ak_valuation(code, last=None):
         pass
     if out["trailing_pe"] and out["eps_growth"] and out["eps_growth"] > 0:  # 粗略 PEG
         out["peg"] = round(out["trailing_pe"] / out["eps_growth"], 2)
+    for field in ("forward_pe", "trailing_pe", "peg", "eps_growth", "rev_growth"):
+        if not _finite(out[field]):
+            out[field] = None
     return out
 
 def _yf_valuation(yf_symbol, info=None):
+    yf_symbol = _yfinance_symbol(yf_symbol)
     out = {"forward_pe": None, "trailing_pe": None, "peg": None, "eps_growth": None, "rev_growth": None, "src": "yfinance"}
     if info is None:
         try:
@@ -169,7 +269,7 @@ def _yf_valuation(yf_symbol, info=None):
             return out
     def g(k):
         v = info.get(k)
-        return round(float(v), 2) if isinstance(v, (int, float)) and v == v else None
+        return round(float(v), 2) if _finite(v) else None
     out["forward_pe"] = g("forwardPE"); out["trailing_pe"] = g("trailingPE")
     out["peg"] = g("pegRatio") or g("trailingPegRatio")
     eg = g("earningsGrowth")

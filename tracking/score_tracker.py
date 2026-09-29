@@ -19,6 +19,7 @@
   控制台只打 ASCII 摘要;完整中文表写 scorecard.md(UTF-8)。价格缓存 _score_price_cache.json。
 """
 import csv, json, os, sys, datetime
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "scripts"))
@@ -35,18 +36,27 @@ BROAD = {"US": ["SPY"], "CN": ["510300.SHG", "159919.SHE"], "HK": ["2800.HK"]}
 # **必须从样本外验证里剔除**——否则就是 skill 自己免责声明里警告的循环论证 + 幸存者偏差。
 SEED_CUTOFF = "2026-02-01"
 
-_cache = {}
-if os.path.exists(CACHE_F):
+CACHE_POLICY = "provider-adjusted-v0.2"
+
+
+def load_cache(path, today=None):
+    today = today or datetime.date.today().isoformat()
     try:
-        _cache = json.load(open(CACHE_F, encoding="utf-8"))
-    except Exception:
-        _cache = {}
+        saved = json.loads(Path(path).read_text(encoding="utf-8"))
+        if saved.get("policy") == CACHE_POLICY and saved.get("generated_on") == today and isinstance(saved.get("prices"), dict):
+            return saved["prices"]
+    except (OSError, ValueError, AttributeError):
+        pass
+    return {}
+
+
+_cache = load_cache(CACHE_F)
 
 
 def hist(sym, days=400):
     if not sym:
         return []
-    if sym in _cache:
+    if _cache.get(sym):
         return _cache[sym]
     data, _prov = fetch_history(sym, days=days)
     rows = [{"date": d["date"], "close": d["close"]} for d in data] if data else []
@@ -137,7 +147,8 @@ def main():
         for row in csv.DictReader(f):
             benchmarks[row["theme"]] = (row["benchmark"], row.get("note", ""))
 
-    rows = list(csv.DictReader(open(CSV_F, encoding="utf-8")))
+    with open(CSV_F, encoding="utf-8-sig") as handle:
+        rows = list(csv.DictReader(handle))
     if limit:
         rows = rows[:limit]
 
@@ -171,7 +182,8 @@ def main():
             "fired": fired_invalidation(pr, r1m, r.get("invalidation", "")),
         })
 
-    json.dump(_cache, open(CACHE_F, "w", encoding="utf-8"), ensure_ascii=False)
+    from render_report import _atomic_text
+    _atomic_text(CACHE_F, json.dumps({"policy": CACHE_POLICY, "generated_on": today, "prices": _cache}, ensure_ascii=False))
 
     # 种子/校准集(in-sample,光子学等)单列,**不进样本外头条**
     seed = [s for s in scored if s["seed"]]
