@@ -137,8 +137,8 @@ export default function Scorecard() {
             ) : (
               <>
                 ⚠ <b>{probs.length}</b> 个标的数据存疑 · A股前复权 {dq.ashare_adjusted}/{dq.ashare_total}
-                {dq.ashare_raw_eodhd.length > 0 && <> · 未前复权(高危,可能除权脏数据):<b>{dq.ashare_raw_eodhd.join(" ")}</b></>}
-                {dq.split_suspects.length > 0 && <> · 疑似漏网除权:<b>{dq.split_suspects.join(" ")}</b></>}
+                {dq.ashare_raw_eodhd.length > 0 && <> · 非首选复权来源（需核对）:<b>{dq.ashare_raw_eodhd.join(" ")}</b></>}
+                {dq.split_suspects.length > 0 && <> · 大幅跳空待核对:<b>{dq.split_suspects.join(" ")}</b></>}
               </>
             )}
           </div>

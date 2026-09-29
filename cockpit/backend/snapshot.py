@@ -233,12 +233,12 @@ def _build_snapshot(limit: int = 0):
             if prov in _ADJ_OK:
                 dq["ashare_adjusted"] += 1
             else:
-                dq["ashare_raw_eodhd"].append(s)  # A股掉到非前复权源 → 高危(可能除权脏数据)
+                dq["ashare_raw_eodhd"].append(s)  # A股掉到非前复权源 → 价格变化或复权来源需核对
         h = v.get("_hist") or []
         w = h[-130:] if len(h) > 130 else h       # 近 ~6 月
         for i in range(1, len(w)):
             pc, cc = w[i - 1].get("close"), w[i].get("close")
-            if pc and cc and (cc / pc < 0.78 or cc / pc > 1.45):  # 复权后仍超涨跌停跳空 = 漏网除权
+            if pc and cc and (cc / pc < 0.78 or cc / pc > 1.45):  # 大幅跳空可能是事件或复权问题，仅提示核对，不自动修平
                 dq["split_suspects"].append(s)
                 break
 

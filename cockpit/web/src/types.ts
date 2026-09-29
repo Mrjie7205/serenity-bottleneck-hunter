@@ -130,8 +130,8 @@ export interface TriggerStatus extends TriggerRun {
 export interface DataQuality {
   ashare_total: number;
   ashare_adjusted: number;
-  ashare_raw_eodhd: string[];   // A股掉到非前复权源(高危:可能除权脏数据)
-  split_suspects: string[];     // 复权后仍有超涨跌停跳空(漏网除权)
+  ashare_raw_eodhd: string[];   // A股非首选复权来源，保留字段名以兼容旧快照
+  split_suspects: string[];     // 大幅跳空待核对，不推断或改写公司行动
 }
 
 export interface SnapshotStatus {

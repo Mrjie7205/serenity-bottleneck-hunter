@@ -37,7 +37,7 @@ function SyncButton() {
     ? `快照 ${snap.generated_at} · ${snap.symbol_count} 标的` +
       (missingBenchmarks.length ? `\n基准行情暂缺:${missingBenchmarks.join("、")}，对应 α 暂不可用` : "") +
       (dq ? `\n数据质检:A股前复权 ${dq.ashare_adjusted}/${dq.ashare_total}` +
-        (problems ? `\n⚠ 高危(可能除权脏数据):${[...dq.ashare_raw_eodhd, ...dq.split_suspects].join(" ")}` : " · 全部前复权 ✓")
+        (problems ? `\n⚠ 价格变化或复权来源需核对:${[...dq.ashare_raw_eodhd, ...dq.split_suspects].join(" ")}` : " · 全部前复权 ✓")
         : "\n(本次质检数据待下次同步生成)") +
       `\n按当前跟踪表取价，可能需要几分钟并消耗数据服务额度`
     : snap?.message || "尚无价格快照,点击构建");
