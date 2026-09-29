@@ -33,6 +33,8 @@ description: 给定一个投资主题/趋势,复用交易者 Serenity(@aleabitor
 
 默认 `python cockpit/run.py` 读取只读历史演示，不抓取行情。用户自己的研究须明确指定目录；报告 SPEC 的 `out` 与 `tracking_file` 应指向该目录。取价、告警核对和定时任务分别由用户手动触发或显式启用。驾驶舱的“猎手／覆盖”是显示范围，不是龙头视角。
 
+个人目录的星级用 `tracking/cross_theme_scan.py --input <个人跟踪表> --output <个人星级表>` 重建，避免把公库历史样本的星级混入个人研究。
+
 ## 工作流(7 步)
 
 **Step 1 · 确认资本开支确定性**

@@ -67,6 +67,12 @@ local-data/
 
 也可通过 `SERENITY_DATA_DIR` 环境变量指定个人目录。路径必须明确提供且包含 `tracking/forward_picks.csv`；不会自动搜索任何相邻私库。页面会显示“个人研究”。尚未分类的记录可在“覆盖”镜头查看；补齐主题分类后，按原有规则进入对应地图和“猎手”范围。
 
+新增研究后，按同样规则为个人目录重建跨主题星级（不联网，也不改写研究记录）：
+
+```bash
+python tracking/cross_theme_scan.py --input local-data/tracking/forward_picks.csv --output local-data/tracking/cross_theme_index_snapshot.csv
+```
+
 选择个人目录后，“同步股价”、K 线查询和手动告警核对才会联网，可能消耗数据服务额度；使用公库根目录的价格工具及同样的数据质量提示。A 股可选依赖见 `reference/DATA_SOURCES.md`。新增记录后旧收益快照会提示刷新，不按 CSV 行号错配。
 
 定时任务默认关闭。需要时在个人环境中明确设置 `SERENITY_SCHEDULER=1`，启用每日本地时间 16:30 的告警检查；同时设置 `SNAPSHOT_AUTO=1` 才启用 16:40 全量价格快照。本机服务需保持运行。

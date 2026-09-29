@@ -203,4 +203,12 @@ def main():
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Rebuild cross-theme stars from an explicitly selected registry; no network calls.")
+    parser.add_argument("--input", default=CSV_PATH, help="Input forward_picks.csv (existing default preserved)")
+    parser.add_argument("--output", default=SNAPSHOT_PATH, help="Output cross-theme snapshot (existing default preserved)")
+    options = parser.parse_args()
+    CSV_PATH, SNAPSHOT_PATH = os.path.abspath(options.input), os.path.abspath(options.output)
+    if os.path.normcase(CSV_PATH) == os.path.normcase(SNAPSHOT_PATH):
+        parser.error("input and output must be different files")
     exit(main())
